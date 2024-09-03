@@ -1,0 +1,199 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <ctype.h>
+
+#define MaxLength 11
+#define Maxcount 5
+
+typedef char* string;
+
+typedef struct {
+    string name;
+    long date_of_birth;  // YYYYMMDD format
+} Person;
+
+// Function prototypes
+int is_numeric(const char *str);
+int validate_date(const char *date_str, long *dob);
+void clear_input_buffer();
+
+int main() {
+    int count = 0;
+    Person records[Maxcount];
+    char nameInput[MaxLength];
+    char dateInput[10]; // 8 digits + newline + null terminator
+    string intro = "Names Entry & Sorting Program\nPlease input name and birthday (max 5 entries):\n";
+    string nameInputPrompt = "Name (first last): ";
+    string dateInputPrompt = "Birthday (YYYYMMDD): ";
+    string recordTemplate = "%-10s %-8ld Entry count: %2d malloc address: %p -> %p\n";
+    string sortedRecordsIntro = "\nSorted Records:\n";
+    string errorMessage = "Incorrect name format!\n";
+    string dateError = "Date format error! Please re-enter date (YYYYMMDD).\n";
+    string emptyDateError = "Empty date error\n";
+    int error = 0;
+    char c;
+    int length = 0;
+    int i, j;
+    Person temp;
+
+    printf("%s", intro);
+
+    while (count < Maxcount && !error) {
+        // Name Input
+        printf("%s", nameInputPrompt);
+        length = 0;
+
+        while ((c = getchar()) != '\n' && c != EOF) {
+            if (length < MaxLength - 1) {
+                nameInput[length++] = c;
+            }
+        }
+
+        if (length > 0) {
+            nameInput[length] = '\0';
+            records[count].name = malloc(strlen(nameInput) + 1);
+            assert(records[count].name != NULL);
+            strcpy(records[count].name, nameInput);
+
+            // Date of Birth Input with Validation
+            while (1) {
+                printf("%s", dateInputPrompt);
+                if (fgets(dateInput, sizeof(dateInput), stdin) == NULL) {
+                    printf("%s", emptyDateError);
+                    error = 1;
+                    break;
+                }
+
+                // Remove newline character if present
+                dateInput[strcspn(dateInput, "\n")] = '\0';
+
+                // Check for empty input
+                if (strlen(dateInput) == 0) {
+                    printf("%s", emptyDateError);
+                    error = 1;
+                    break;
+                }
+
+                long dob;
+                if (validate_date(dateInput, &dob)) {
+                    records[count].date_of_birth = dob;
+                    break; // Valid date entered
+                } else {
+                    printf("%s", dateError);
+                }
+            }
+
+            if (error) {
+                free(records[count].name);
+                break;
+            }
+
+            printf(recordTemplate, records[count].name, records[count].date_of_birth, count + 1, (void*)&records[count], (void*)records[count].name);
+            count++;
+        } else {
+            error = 1;
+            printf("%s", errorMessage);
+        }
+    }
+
+    if (!error) {
+        // Sorting Records Alphabetically by Name
+        for (i = 0; i < count - 1; i++) {
+            for (j = i + 1; j < count; j++) {
+                if (strcmp(records[i].name, records[j].name) > 0) {
+                    temp = records[i];
+                    records[i] = records[j];
+                    records[j] = temp;
+                }
+            }
+        }
+
+        // Display Sorted Records
+        printf("%s", sortedRecordsIntro);
+        for (i = 0; i < count; i++) {
+            printf(recordTemplate, records[i].name, records[i].date_of_birth, i + 1, (void*)&records[i], (void*)records[i].name);
+            free(records[i].name);
+        }
+    } else {
+        // In case of error, free any allocated memory before exiting
+        for (i = 0; i < count; i++) {
+            free(records[i].name);
+        }
+    }
+
+    return 0;
+}
+
+// Function to check if a string is numeric
+int is_numeric(const char *str) {
+    for (int i = 0; str[i]; i++) {
+        if (!isdigit((unsigned char)str[i])) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+// Function to validate the date string and convert it to long
+int validate_date(const char *date_str, long *dob) {
+    // Check if all characters are numeric
+    if (!is_numeric(date_str)) {
+        return 0;
+    }
+
+    // Check if the length is exactly 8
+    if (strlen(date_str) != 8) {
+        return 0;
+    }
+
+    // Extract year, month, and day
+    char year_str[5], month_str[3], day_str[3];
+    strncpy(year_str, date_str, 4);
+    year_str[4] = '\0';
+    strncpy(month_str, date_str + 4, 2);
+    month_str[2] = '\0';
+    strncpy(day_str, date_str + 6, 2);
+    day_str[2] = '\0';
+
+    int year = atoi(year_str);
+    int month = atoi(month_str);
+    int day = atoi(day_str);
+
+    // Validate year
+    if (year < 0 || year > 9999) {
+        return 0;
+    }
+
+    // Validate month
+    if (month < 1 || month > 12) {
+        return 0;
+    }
+
+    // Validate day based on month
+    if (month == 2) {
+        if (day < 1 || day > 28) {
+            return 0;
+        }
+    } else if (month == 4 || month == 6 || month == 9 || month == 11) {
+        if (day < 1 || day > 30) {
+            return 0;
+        }
+    } else {
+        if (day < 1 || day > 31) {
+            return 0;
+        }
+    }
+
+    // All validations passed
+    *dob = atol(date_str);
+    return 1;
+}
+
+// Function to clear the input buffer (if needed)
+void clear_input_buffer() {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
+}
+
