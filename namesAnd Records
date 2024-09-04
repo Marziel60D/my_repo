@@ -96,6 +96,79 @@ int validate_date(const char *date_str, long *dob) {
 
 
 
+///////
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+int is_valid_number(const char *str);
+void print_values(int num);
+void print_binary(int num);
+
+int main() {
+    char input[10];
+    int num;
+    char operation;
+
+    // Get valid number input from user
+    printf("Enter a number (0-255): ");
+    if (!fgets(input, sizeof(input), stdin) || !is_valid_number(input) || (num = atoi(input)) < 0 || num > 255) {
+        printf("Wrong input\n");
+        return 1;
+    }
+
+    // Loop for operations
+    while (1) {
+        printf("\nChoose operation - 'L' (Left Shift), 'R' (Right Shift), 'C' (Complement), 'E' (Exit): ");
+        operation = getchar();
+        while (getchar() != '\n');  // Clear input buffer
+
+        switch (operation) {
+            case 'L': 
+                num <<= 1; 
+                break;
+            case 'R': 
+                num >>= 1; 
+                break;
+            case 'C': 
+                num = ~num & 0xFF; 
+                break;
+            case 'E': 
+                return 0;
+            default: 
+                printf("Invalid operation. Please enter a correct choice.\n"); 
+                continue;
+        }
+
+        print_values(num);
+    }
+
+    return 0;
+}
+
+// Check if the string represents a valid number
+int is_valid_number(const char *str) {
+    for (int i = 0; str[i] != '\n' && str[i] != '\0'; i++) {
+        if (!isdigit(str[i])) return 0;
+    }
+    return 1;
+}
+
+// Print decimal, hexadecimal, and binary values
+void print_values(int num) {
+    printf("Decimal: %d, Hexadecimal: 0x%X, Binary: ", num, num);
+    print_binary(num);
+    printf("\n");
+}
+
+// Print binary representation
+void print_binary(int num) {
+    for (int i = 7; i >= 0; i--) {
+        printf("%d", (num >> i) & 1);
+    }
+}
 
 
 
