@@ -1,0 +1,74 @@
+Note title: C library to learn
+Note author: Marziel60D
+
+1. Standard Input/Output Library (stdio.h)
+Functions: printf(), scanf(), fprintf(), fscanf(), fgets(), fputs(), fopen(), fclose()
+Purpose: Provides functions for input and output operations, such as reading/writing from/to the console and files.
+
+2. String Manipulation Library (string.h)
+Functions: strlen(), strcpy(), strncpy(), strcat(), strcmp(), strstr(), memcpy()
+Purpose: Contains functions for manipulating C-style strings (character arrays) and memory blocks.
+
+3. Mathematics Library (math.h)
+Functions: sqrt(), pow(), sin(), cos(), tan(), log(), abs(), ceil(), floor()
+Purpose: Provides mathematical functions like power, trigonometric, logarithmic, and exponential functions.
+
+4. Dynamic Memory Allocation Library (stdlib.h)
+Functions: malloc(), calloc(), realloc(), free(), exit(), system(), atoi(), rand(), srand()
+Purpose: Includes functions for dynamic memory management, conversions, and process control.
+
+5. Time Library (time.h)
+Functions: time(), difftime(), clock(), asctime(), ctime(), gmtime(), localtime(), strftime()
+Purpose: Used for handling date and time operations, including getting the current time and manipulating time structures.
+
+6. Character Classification Library (ctype.h)
+Functions: isalpha(), isdigit(), isalnum(), isupper(), islower(), isspace(), toupper(), tolower()
+Purpose: Provides functions for classifying and converting characters (e.g., checking if a character is a letter or a digit).
+
+7. Error Handling Library (errno.h)
+Macros: errno, EDOM, ERANGE
+Purpose: Defines macros for reporting and handling errors, providing a mechanism to check for error conditions in library functions.
+
+8. Signal Handling Library (signal.h)
+Functions: signal(), raise(), kill(), alarm(), pause()
+Purpose: Used to handle various signals (e.g., interrupt signals) and signal-related actions in a C program.
+
+9. Input/Output Control Library (fcntl.h)
+Functions: open(), creat(), fcntl()
+Purpose: Provides functions for file handling at a lower level than the stdio.h library.
+
+10. File Control Operations Library (unistd.h)
+Functions: read(), write(), close(), lseek(), getpid(), fork(), exec()
+Purpose: Contains functions for interacting with the operating system, particularly in Unix-like systems (e.g., file descriptors and process control).
+
+11. Assert Library (assert.h)
+Functions: assert()
+Purpose: Allows for runtime diagnostics through the use of assertions, which help in debugging.
+
+12. Limits Library (limits.h)
+Macros: INT_MAX, INT_MIN, CHAR_MAX, LONG_MAX, LONG_MIN
+Purpose: Defines constants for the limits of basic data types (e.g., maximum and minimum values of int, char, long).
+
+13. Float Library (float.h)
+Macros: FLT_MAX, FLT_MIN, DBL_MAX, DBL_MIN
+Purpose: Defines macros for limits related to floating-point types (e.g., precision, maximum, and minimum values).
+
+14. Locale Library (locale.h)
+Functions: setlocale(), localeconv()
+Purpose: Provides functions for setting and querying the locale, which affects things like date and time formats, currency, and number formatting.
+
+15. Complex Numbers Library (complex.h)
+Functions: cabs(), creal(), cimag(), cexp(), clog()
+Purpose: Provides support for operations on complex numbers.
+
+16. Set Jump Library (setjmp.h)
+Functions: setjmp(), longjmp()
+Purpose: Provides non-local jumps, allowing for the saving and restoring of execution state, useful for error handling and recovery.
+
+17. Standard Integer Types Library (stdint.h)
+Macros/Types: int8_t, int16_t, int32_t, int64_t, uint8_t, UINT32_MAX, INTPTR_MAX
+Purpose: Defines exact-width integer types, as well as limits for integer types.
+
+18. Type Definitions Library (stddef.h)
+Macros/Types: size_t, ptrdiff_t, NULL, offsetof()
+Purpose: Contains type definitions for several standard types like size_t and ptrdiff_t.
