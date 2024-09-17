@@ -72,3 +72,93 @@ Purpose: Defines exact-width integer types, as well as limits for integer types.
 18. Type Definitions Library (stddef.h)
 Macros/Types: size_t, ptrdiff_t, NULL, offsetof()
 Purpose: Contains type definitions for several standard types like size_t and ptrdiff_t.
+
+
+
+
+
+#include <EEPROM.h>  //Include EEPROM library for storing values
+
+const int button1Pin = 6; //Play/Stop button connected to digital pin 6
+const int button2Pin = 5; //Record button connected to digital pin 5
+const int buzzerPin = 13; //Speaker connected to digital pin 13
+const int potPin = A0;    //Potentiometer connected to analog pin A0
+
+int melody[] = {NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4}; //Melody notes
+int noteDurations[] = {4, 8, 8, 4, 4, 4, 4, 4}; //Note durations
+int numNotes = sizeof(melody) / sizeof(melody[0]); //Number of notes
+
+bool isPlaying = false; //Tracks melody playback state
+bool recording = false; //Tracks if pitch is being recorded
+int lastButton1State = LOW; //Debouncing for button 1
+int lastButton2State = LOW; //Debouncing for button 2
+int currentNoteIndex = 0;   //Track current note in melody
+
+int eepromAddress = 0; //EEPROM address for saving pitch
+int savedPitchAdjust = 0; //Pitch adjustment saved in EEPROM
+int pitchAdjust = 0;      //Current pitch adjustment from potentiometer
+
+void setup() {
+  DDRD &= ~(1 << button1Pin);  //Set button 1 as input
+  DDRD &= ~(1 << button2Pin);  //Set button 2 as input
+  DDRB |= (1 << buzzerPin);    //Set buzzer as output
+
+  Serial.begin(9600); //Start serial for debugging
+
+  savedPitchAdjust = EEPROM.read(eepromAddress); //Read saved pitch from EEPROM
+  if (savedPitchAdjust > 100 || savedPitchAdjust < -100) {
+    savedPitchAdjust = 0; //Reset if value is out of range
+  }
+}
+
+void loop() {
+  int potValue = analogRead(potPin); //Read potentiometer value
+  pitchAdjust = map(potValue, 0, 1023, -100, 100); //Map potentiometer value to pitch range
+
+  int button1State = PIND & (1 << button1Pin); //Read button 1 state
+  int button2State = PIND & (1 << button2Pin); //Read button 2 state
+
+  if (button1State && !lastButton1State) {
+    isPlaying = !isPlaying; //Toggle play/stop
+    delay(50); //Debouncing delay
+  }
+  lastButton1State = button1State; //Update button 1 state
+
+  if (button2State && !lastButton2State) {
+    recording = true; //Record pitch
+    savedPitchAdjust = pitchAdjust;
+    EEPROM.write(eepromAddress, savedPitchAdjust); //Save pitch to EEPROM
+    delay(50); //Debouncing delay
+  }
+  lastButton2State = button2State; //Update button 2 state
+
+  if (button1State && button2State) {
+    isPlaying = false; //Stop melody
+    currentNoteIndex = 0; //Reset melody playback position
+  }
+
+  if (isPlaying) {
+    int adjustedFrequency = melody[currentNoteIndex] + savedPitchAdjust + pitchAdjust; //Adjust frequency
+    int noteDuration = 1000 / noteDurations[currentNoteIndex]; //Calculate note duration
+    tone(buzzerPin, adjustedFrequency, noteDuration); //Play note
+
+    unsigned long noteStartTime = millis();
+    while (millis() - noteStartTime < noteDuration * 1.30) {
+      button1State = PIND & (1 << button1Pin); //Check if button 1 pressed during playback
+      if (button1State && !lastButton1State) {
+        isPlaying = false; //Stop melody
+        noTone(buzzerPin); //Stop buzzer
+        delay(50); //Debouncing delay
+        break; //Exit loop
+      }
+      lastButton1State = button1State; //Update button 1 state
+    }
+
+    currentNoteIndex++; //Move to next note
+    if (currentNoteIndex >= numNotes) {
+      currentNoteIndex = 0; //Loop melody
+    }
+  } else {
+    noTone(buzzerPin); //Stop buzzer if melody is stopped
+  }
+}
