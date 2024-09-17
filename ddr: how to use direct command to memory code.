@@ -1,184 +1,96 @@
-#include "pitches.h"  // Include note library
+#include <EEPROM.h>  // Include EEPROM library for saving pitch
 
 // Pin definitions
-const int buttonPin = 6;   // Push button connected to digital pin 6
-const int buzzerPin = 13;  // Buzzer connected to digital pin 13
-const int potPin = A0;     // Potentiometer connected to analog pin A0
+const int buttonPin1 = 6;   // Button 1 for toggling play/stop
+const int buttonPin2 = 5;   // Button 2 for recording pitch
+const int buzzerPin = 13;   // Speaker
+const int potPin = A0;      // Potentiometer
 
-// Melody settings (from your provided song)
+// Melody settings (same as the original melody in "Tone Melody" example)
 int melody[] = {
   NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4
 };
-
-// Note durations: 4 = quarter note, 8 = eighth note, etc.
-int noteDurations[] = {
-  4, 8, 8, 4, 4, 4, 4, 4
-};
-
+int noteDurations[] = {4, 8, 8, 4, 4, 4, 4, 4};
 int numNotes = sizeof(melody) / sizeof(melody[0]);
 
-// Button and playback state
-bool isPlaying = false;  // To keep track of whether the melody is playing or not
-bool lastButtonState = LOW; // Last button state for debouncing
-bool buttonPressed = false; // To check if the button has been pressed
+// Playback control variables
+bool isPlaying = false;
+int lastButton1State = LOW;
+int lastButton2State = LOW;
+int melodyPosition = 0;  // Keep track of where the melody stopped
+int storedPitchAdjust = 0; // Value stored in EEPROM
+int pitchAdjust = 0;  // Adjusted pitch based on potentiometer
 
 void setup() {
-  pinMode(buttonPin, INPUT);
+  pinMode(buttonPin1, INPUT);
+  pinMode(buttonPin2, INPUT);
   pinMode(buzzerPin, OUTPUT);
-  Serial.begin(9600); // For debugging purposes
+  Serial.begin(9600);
+
+  // Retrieve stored pitch adjust value from EEPROM (Address 0)
+  storedPitchAdjust = EEPROM.read(0);
+
+  // Print stored pitch on startup
+  Serial.print("Stored Pitch from EEPROM: ");
+  Serial.println(storedPitchAdjust);
 }
 
 void loop() {
-  // Read the potentiometer value and map it to pitch adjustment range (-100Hz to +100Hz)
+  // Read potentiometer value and map it to pitch adjustment range (-100Hz to +100Hz)
   int potValue = analogRead(potPin);
-  int pitchAdjust = map(potValue, 0, 1023, -100, 100);
-  
-  // Read the current button state
-  bool buttonState = digitalRead(buttonPin);
-  
-  // Toggle play/stop when the button is pressed (with debouncing)
-  if (buttonState == HIGH && lastButtonState == LOW) {
-    buttonPressed = !buttonPressed;  // Toggle the button pressed state
+  pitchAdjust = map(potValue, 0, 1023, -100, 100);
+
+  // Read button states
+  int button1State = digitalRead(buttonPin1);
+  int button2State = digitalRead(buttonPin2);
+
+  // Handle button 1 for toggling play/stop
+  if (button1State == HIGH && lastButton1State == LOW) {
+    isPlaying = !isPlaying;  // Toggle between play and stop
+    delay(50);               // Debouncing delay
+  }
+  lastButton1State = button1State;  // Update the last state of button 1
+
+  // Handle button 2 for recording pitch
+  if (button2State == HIGH && lastButton2State == LOW) {
+    EEPROM.write(0, pitchAdjust);  // Store the current pitch adjustment value in EEPROM
+    storedPitchAdjust = pitchAdjust;  // Update the stored pitch
+    Serial.print("Pitch saved to EEPROM: ");
+    Serial.println(storedPitchAdjust);
     delay(50);  // Debouncing delay
   }
-  
-  lastButtonState = buttonState; // Update the last button state
+  lastButton2State = button2State;  // Update the last state of button 2
 
-  // Update buzzer state based on button pressed state
-  if (buttonPressed) {
-    if (!isPlaying) {
-      isPlaying = true; // Start playing the melody
-    }
-  } else {
-    isPlaying = false; // Stop playing the melody
+  // Handle simultaneous button press (both button 1 and 2)
+  if (button1State == HIGH && button2State == HIGH) {
+    isPlaying = false;  // Stop melody playback
+    melodyPosition = 0;  // Reset melody position to start
   }
 
-  // If the melody should be playing
+  // Play melody if it's toggled to play mode
   if (isPlaying) {
-    // Loop through all notes of the melody
-    for (int thisNote = 0; thisNote < numNotes; thisNote++) {
-      // Adjust the pitch of each note based on the potentiometer
-      int adjustedFrequency = melody[thisNote] + pitchAdjust;
+    // Print the current pitch being applied
+    Serial.print("Stored Pitch: ");
+    Serial.print(storedPitchAdjust);
+    Serial.print(", Current Pitch Adjust (Potentiometer): ");
+    Serial.println(pitchAdjust);
 
-      // Calculate the note duration (e.g. quarter note = 1000 / 4)
-      int noteDuration = 1000 / noteDurations[thisNote];
+    int adjustedFrequency = melody[melodyPosition] + storedPitchAdjust + pitchAdjust; // Apply stored and current pitch adjustment
 
-      // Play the note with the adjusted frequency
-      tone(buzzerPin, adjustedFrequency, noteDuration);
-      
-      // Pause between notes (note duration + 30%)
-      int pauseBetweenNotes = noteDuration * 1.30;
-      delay(pauseBetweenNotes);
-      
-      // Stop the buzzer between notes
-      noTone(buzzerPin);
-      
-      // Check if the button is pressed again to stop during playback
-      buttonState = digitalRead(buttonPin);
-      if (buttonState == HIGH && lastButtonState == LOW) {
-        isPlaying = false;  // Stop the melody
-        noTone(buzzerPin);  // Stop the buzzer immediately
-        delay(50);          // Debouncing delay
-        break;              // Exit the note loop to stop the melody
-      }
-      lastButtonState = buttonState; // Update the last button state
+    // Calculate note duration
+    int noteDuration = 1000 / noteDurations[melodyPosition];
+    tone(buzzerPin, adjustedFrequency, noteDuration);
+
+    // Wait for the note to finish playing
+    delay(noteDuration * 1.30);
+    noTone(buzzerPin);  // Stop the tone
+
+    // Move to the next note
+    melodyPosition++;
+    if (melodyPosition >= numNotes) {
+      melodyPosition = 0;  // Loop back to the start of the melody
     }
   } else {
-    noTone(buzzerPin);  // Stop the buzzer when the melody is stopped
-  }
-}
-
-
-
-
-///////nowwwww/////
-
-#include "pitches.h"  // Include note library
-
-// Pin definitions
-const int buttonPin = 6;   // Push button connected to digital pin 6
-const int buzzerPin = 13;  // Buzzer connected to digital pin 13
-const int potPin = A0;     // Potentiometer connected to analog pin A0
-
-// Melody settings (from your provided song)
-int melody[] = {
-  NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4
-};
-
-// Note durations: 4 = quarter note, 8 = eighth note, etc.
-int noteDurations[] = {
-  4, 8, 8, 4, 4, 4, 4, 4
-};
-
-int numNotes = sizeof(melody) / sizeof(melody[0]);
-
-// Button and playback state
-bool isPlaying = false;  // To keep track of whether the melody is playing or not
-bool lastButtonState = LOW; // Last button state for debouncing
-bool buttonPressed = false; // To check if the button has been pressed
-
-void setup() {
-  pinMode(buttonPin, INPUT);
-  pinMode(buzzerPin, OUTPUT);
-  Serial.begin(9600); // For debugging purposes
-}
-
-void loop() {
-  // Read the potentiometer value and map it to pitch adjustment range (-100Hz to +100Hz)
-  int potValue = analogRead(potPin);
-  int pitchAdjust = map(potValue, 0, 1023, -100, 100);
-  
-  // Read the current button state
-  bool buttonState = digitalRead(buttonPin);
-  
-  // Toggle play/stop when the button is pressed (with debouncing)
-  if (buttonState == HIGH && lastButtonState == LOW) {
-    buttonPressed = !buttonPressed;  // Toggle the button pressed state
-    delay(50);  // Debouncing delay
-  }
-  
-  lastButtonState = buttonState; // Update the last button state
-
-  // Update buzzer state based on button pressed state
-  if (buttonPressed) {
-    if (!isPlaying) {
-      isPlaying = true; // Start playing the melody
-    }
-  } else {
-    isPlaying = false; // Stop playing the melody
-  }
-
-  // If the melody should be playing
-  if (isPlaying) {
-    // Loop through all notes of the melody
-    for (int thisNote = 0; thisNote < numNotes; thisNote++) {
-      // Adjust the pitch of each note based on the potentiometer
-      int adjustedFrequency = melody[thisNote] + pitchAdjust;
-
-      // Calculate the note duration (e.g. quarter note = 1000 / 4)
-      int noteDuration = 1000 / noteDurations[thisNote];
-
-      // Play the note with the adjusted frequency
-      tone(buzzerPin, adjustedFrequency, noteDuration);
-      
-      // Pause between notes (note duration + 30%)
-      int pauseBetweenNotes = noteDuration * 1.30;
-      delay(pauseBetweenNotes);
-      
-      // Stop the buzzer between notes
-      noTone(buzzerPin);
-      
-      // Check if the button is pressed again to stop during playback
-      buttonState = digitalRead(buttonPin);
-      if (buttonState == HIGH && lastButtonState == LOW) {
-        isPlaying = false;  // Stop the melody
-        noTone(buzzerPin);  // Stop the buzzer immediately
-        delay(50);          // Debouncing delay
-        break;              // Exit the note loop to stop the melody
-      }
-      lastButtonState = buttonState; // Update the last button state
-    }
-  } else {
-    noTone(buzzerPin);  // Stop the buzzer when the melody is stopped
+    noTone(buzzerPin);  // Ensure buzzer is off when stopped
   }
 }
