@@ -94,3 +94,91 @@ void loop() {
     noTone(buzzerPin);  // Ensure buzzer is off when stopped
   }
 }
+
+
+////////////
+
+#include <EEPROM.h>
+
+const int buttonPin1 = 6;            // Push button 1 for toggling play/stop
+const int buttonPin2 = 5;            // Push button 2 for recording pitch
+const int buzzerPin = 13;            // Speaker
+const int potPin = A0;               // Potentiometer
+const int EEPROMAddress = 0;         // EEPROM address for storing pitch
+
+int melody[] = {
+  NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4
+};
+
+int noteDurations[] = {
+  4, 8, 8, 4, 4, 4, 4, 4
+};
+
+bool isPlaying = false;              // To track if melody is playing
+int lastButtonState1 = LOW;          // Last state of button 1 for debouncing
+int lastButtonState2 = LOW;          // Last state of button 2 for debouncing
+int melodyPosition = 0;              // Current melody position
+int storedPitch = 0;                 // Stored pitch in EEPROM
+int currentPitch = 0;                // Current pitch
+
+void setup() {
+  pinMode(buttonPin1, INPUT);
+  pinMode(buttonPin2, INPUT);
+  pinMode(buzzerPin, OUTPUT);
+  Serial.begin(9600);                // Initialize serial for debugging
+
+  storedPitch = EEPROM.read(EEPROMAddress);  // Read stored pitch from EEPROM
+  Serial.print("Stored Pitch: ");
+  Serial.println(storedPitch);        // Print stored pitch
+}
+
+void loop() {
+  int potValue = analogRead(potPin);  // Read potentiometer value
+  int pitchAdjust = map(potValue, 0, 1023, -100, 100);  // Map potentiometer value
+
+  currentPitch = storedPitch + pitchAdjust;  // Adjust the current pitch
+  Serial.print("Current Pitch: ");
+  Serial.println(currentPitch);        // Print current pitch
+
+  int buttonState1 = digitalRead(buttonPin1);  // Read button 1 state
+  int buttonState2 = digitalRead(buttonPin2);  // Read button 2 state
+
+  if (buttonState1 == HIGH && lastButtonState1 == LOW) { // Toggle play/stop
+    isPlaying = !isPlaying;
+    delay(50);  // Debounce delay
+  }
+  lastButtonState1 = buttonState1;
+
+  if (buttonState2 == HIGH && lastButtonState2 == LOW) { // Record pitch to EEPROM
+    EEPROM.write(EEPROMAddress, currentPitch);
+    storedPitch = currentPitch;  // Update stored pitch
+    delay(50);  // Debounce delay
+  }
+  lastButtonState2 = buttonState2;
+
+  if (buttonState1 == HIGH && buttonState2 == HIGH) {  // Reset melody to start
+    isPlaying = false;
+    melodyPosition = 0;
+  }
+
+  if (isPlaying) {  // Play melody if isPlaying is true
+    for (int thisNote = melodyPosition; thisNote < 8; thisNote++) {
+      int noteDuration = 1000 / noteDurations[thisNote];
+      tone(buzzerPin, melody[thisNote] + currentPitch, noteDuration);
+
+      int pauseBetweenNotes = noteDuration * 1.30;
+      delay(pauseBetweenNotes);
+      noTone(buzzerPin);
+
+      int buttonState1 = digitalRead(buttonPin1);
+      if (buttonState1 == HIGH && lastButtonState1 == LOW) {
+        isPlaying = false;
+        melodyPosition = thisNote;  // Save position to resume later
+        break;
+      }
+      lastButtonState1 = buttonState1;
+    }
+  } else {
+    noTone(buzzerPin);
+  }
+}
