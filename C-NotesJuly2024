@@ -157,3 +157,58 @@ void loop() {
     noTone(buzzerPin);                                        // Stop the buzzer when the melody is stopped
   }
 }
+
+
+START
+  |
+  |-- [Setup Function] -- Initialize Serial Communication
+  |          |
+  |          |-- Read saved pitch from EEPROM
+  |          |-- Check if saved pitch is valid (in range -100 to 100)
+  |          |-- If invalid, reset saved pitch to 0
+  |
+  |-- [Loop Function]
+             |
+             |-- Read potentiometer value (potValue)
+             |-- Map potValue to pitch adjustment range (pitchAdjust)
+             |
+             |-- Read Button 1 State (Play/Stop Button)
+             |-- Read Button 2 State (Record Button)
+             |
+             |-- [Button 1 Press Detected?]
+             |       |
+             |       |-- YES: Toggle play/stop state (isPlaying)
+             |       |-- NO: Continue
+             |
+             |-- [Button 2 Press Detected?]
+             |       |
+             |       |-- YES: Set recording flag
+             |       |-- Save current pitch to EEPROM
+             |       |-- NO: Continue
+             |
+             |-- [Both Buttons Pressed?]
+             |       |
+             |       |-- YES: Stop Melody and Reset Playback Position
+             |       |-- NO: Continue
+             |
+             |-- [Is Melody Playing?]
+                     |
+                     |-- YES: Play Current Note
+                     |       |
+                     |       |-- Adjust note frequency with saved pitch and current pitch
+                     |       |-- Play note with adjusted frequency and duration
+                     |       |
+                     |       |-- [During Note Playback: Button 1 Press Detected?]
+                     |       |        |
+                     |       |        |-- YES: Stop Melody and Buzzer
+                     |       |        |-- NO: Continue Playing Note
+                     |       |
+                     |       |-- Move to Next Note in Melody
+                     |       |-- [All Notes Played?]
+                     |       |        |
+                     |       |        |-- YES: Reset to First Note
+                     |       |        |-- NO: Continue Playing Melody
+                     |
+                     |-- NO: Stop Buzzer (noTone)
+  |
+REPEAT LOOP
