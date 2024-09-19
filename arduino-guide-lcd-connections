@@ -136,3 +136,133 @@ void updateLCD() {
   lcd.print(tenths);
   lcd.print(" s");
 }
+
+///////////////////////////////////
+
+#include <LiquidCrystal.h>
+
+// LCD pin configuration (RS, EN, D4, D5, D6, D7)
+LiquidCrystal lcd(12, 11, 10, 9, 8, 7);
+
+// Push button pin definitions
+const int btnCountUp = 5;   // Push Button 1 for Count Up (PD5)
+const int btnCountDown = 4; // Push Button 2 for Count Down (PD4)
+const int btnStopReset = 3; // Push Button 3 for Stop/Reset (PD3)
+const int btnNext = 2;      // Push Button 4 for Next Exercise (PD2)
+
+// Stopwatch states
+enum State {
+  STOP,
+  COUNT_UP,
+  COUNT_DOWN
+};
+
+volatile State currentState = STOP;
+volatile int seconds = 0;
+volatile int tenths = 0;
+volatile bool counting = false;
+
+// Timer1 interrupt service routine (ISR) for 10ms intervals
+ISR(TIMER1_COMPA_vect) {
+  if (currentState == COUNT_UP) {
+    tenths += 1;                    // Increment tenths of a second every 10ms
+    if (tenths >= 10) {              // Every 10 tenths is 1 second
+      tenths = 0;
+      seconds += 1;
+    }
+    if (seconds >= 20 && tenths == 0) { // Stop after reaching 20.0 seconds
+      seconds = 20;
+      currentState = STOP;
+      counting = false;
+    }
+  } else if (currentState == COUNT_DOWN) {
+    if (tenths == 0 && seconds > 0) {
+      tenths = 9;
+      seconds -= 1;
+    } else if (tenths > 0) {
+      tenths -= 1;
+    }
+    if (seconds == 0 && tenths == 0) { // Stop when reaching 00.0
+      currentState = STOP;
+      counting = false;
+    }
+  }
+}
+
+// Setup function for Timer1 and other components
+void setup() {
+  lcd.begin(16, 2);                  // 16x2 LCD initialization
+  lcd.clear();
+
+  DDRD &= ~(1 << btnCountUp);        // Set PD5 as input (Button 1)
+  DDRD &= ~(1 << btnCountDown);      // Set PD4 as input (Button 2)
+  DDRD &= ~(1 << btnStopReset);      // Set PD3 as input (Button 3)
+  DDRD &= ~(1 << btnNext);           // Set PD2 as input (Button 4)
+
+  PORTD |= (1 << btnCountUp);        // Enable pull-up on PD5
+  PORTD |= (1 << btnCountDown);      // Enable pull-up on PD4
+  PORTD |= (1 << btnStopReset);      // Enable pull-up on PD3
+  PORTD |= (1 << btnNext);           // Enable pull-up on PD2
+
+  noInterrupts();                    // Disable all interrupts
+  TCCR1A = 0;                        // Reset TCCR1A register
+  TCCR1B = 0;                        // Reset TCCR1B register
+  TCNT1 = 0;                         // Reset the counter
+  OCR1A = 1562;                      // Compare match value for 10ms (16MHz / 1024 / 100Hz)
+  TCCR1B |= (1 << WGM12);            // Set CTC mode
+  TCCR1B |= (1 << CS12) | (1 << CS10); // Set prescaler to 1024
+  TIMSK1 |= (1 << OCIE1A);           // Enable Timer1 compare match A interrupt
+  interrupts();                      // Enable all interrupts
+}
+
+// Function to handle the state transitions and button presses
+void loop() {
+  if (bit_is_clear(PIND, btnCountUp)) {  // Button 1 (Count Up)
+    if (!counting && currentState == STOP) {
+      currentState = COUNT_UP;
+      counting = true;
+    }
+    delay(200);                          // Debouncing
+  }
+
+  if (bit_is_clear(PIND, btnCountDown)) { // Button 2 (Count Down)
+    if (!counting && currentState == STOP) {
+      currentState = COUNT_DOWN;
+      counting = true;
+    }
+    delay(200);                           // Debouncing
+  }
+
+  if (bit_is_clear(PIND, btnStopReset)) { // Button 3 (Stop/Reset)
+    if (counting) {
+      counting = false;
+      currentState = STOP;
+    } else {
+      seconds = 0;
+      tenths = 0;
+    }
+    delay(200);                           // Debouncing
+  }
+
+  updateLCD();                            // Update the LCD display
+}
+
+// Function to update the LCD display
+void updateLCD() {
+  lcd.setCursor(0, 0);                  // Display state on the first line
+  if (currentState == STOP) {
+    lcd.print("STOP       ");
+  } else if (currentState == COUNT_UP) {
+    lcd.print("COUNT_UP   ");
+  } else if (currentState == COUNT_DOWN) {
+    lcd.print("COUNT_DOWN ");
+  }
+
+  lcd.setCursor(0, 1);                  // Display time in the format "00.0 s"
+  lcd.print(seconds < 10 ? "0" : "");   // Add leading zero if necessary
+  lcd.print(seconds);
+  lcd.print(".");
+  lcd.print(tenths);
+  lcd.print(" s");
+}
+
