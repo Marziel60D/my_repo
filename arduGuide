@@ -109,3 +109,42 @@ Once wired up, upload your code and adjust the contrast using the potentiometer 
 3. **No Response from Buttons**: Check the connections from the buttons to the Arduino pins and make sure the pull-up resistors are enabled in the code.
 
 Let me know if you need further assistance!
+
+//////
+
+### **Revised Circuit Setup Without a Potentiometer:**
+
+In this setup, we will replace the potentiometer (used to adjust contrast) with a **fixed resistor**. A value between **1kΩ to 10kΩ** usually works well, but you may need to try a few different values to get the best contrast for your specific display.
+
+### **LCD to Arduino Wiring (Without Potentiometer):**
+1. **VSS (Pin 1 on LCD)**: Connect to **GND** on Arduino.
+2. **VDD (Pin 2 on LCD)**: Connect to **5V** on Arduino.
+3. **V0 (Pin 3 on LCD)**: Connect to **GND** **through a fixed resistor**. You can start with a **1kΩ resistor** and see if the contrast is acceptable.
+4. **RS (Pin 4 on LCD)**: Connect to **Pin 12** on Arduino.
+5. **RW (Pin 5 on LCD)**: Connect to **GND** (for write mode).
+6. **EN (Pin 6 on LCD)**: Connect to **Pin 11** on Arduino.
+7. **D4 (Pin 11 on LCD)**: Connect to **Pin 10** on Arduino.
+8. **D5 (Pin 12 on LCD)**: Connect to **Pin 9** on Arduino.
+9. **D6 (Pin 13 on LCD)**: Connect to **Pin 8** on Arduino.
+10. **D7 (Pin 14 on LCD)**: Connect to **Pin 7** on Arduino.
+11. **A (Pin 15 on LCD)**: Connect to **5V** (for the backlight).
+12. **K (Pin 16 on LCD)**: Connect to **GND** (for the backlight).
+
+### **Fixed Resistor Instead of Potentiometer:**
+- **V0 (Pin 3)** on the LCD will now be connected to **GND** through a resistor, as mentioned above. Start with a **1kΩ resistor**, and if the contrast is too dark or too light, you can try values like **5kΩ** or **10kΩ** until you get good visibility.
+
+### **Push Button to Arduino Wiring (Same as Before):**
+1. **Button 1 (Count Up)**: Connect one leg to **Pin 5**, and the other leg to **GND**.
+2. **Button 2 (Count Down)**: Connect one leg to **Pin 4**, and the other leg to **GND**.
+3. **Button 3 (Stop/Reset)**: Connect one leg to **Pin 3**, and the other leg to **GND**.
+4. **Button 4 (Next Exercise)**: Connect one leg to **Pin 2**, and the other leg to **GND**.
+
+### **Code Adjustments:**
+No changes are needed to the code. This approach only modifies the physical circuit by using a fixed resistor instead of a potentiometer for contrast control.
+
+### **Testing:**
+1. **Power on** the Arduino.
+2. The LCD should light up, and the contrast should be visible. If the characters on the LCD are too light or too dark, change the resistor value accordingly.
+3. Test the buttons as per the specifications you created to ensure the system operates correctly.
+
+By using a fixed resistor, you're simplifying the circuit while ensuring that the LCD operates with consistent contrast.
