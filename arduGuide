@@ -44,5 +44,68 @@ Expected Output: LCD should display leading zeros, ensuring the format is 09.9 s
 Test Case 5.2: Correct Decimal Point Precision
 Input: Push Button 1 (Count Up) or Button 2 (Count Down) and observe the time.
 Expected Output: The time should display with one decimal precision (e.g., 10.5 s instead of 10.50 s).
-Summary:
-This test specification focuses on validating the expected behavior under various input conditions, boundary cases, and usability edge cases. Each test case ensures that the system behaves as expected under normal, debounced, and simultaneous button press scenarios, while the time display format remains accurate on the LCD.
+////////
+
+To ensure your LCD (16x2) is correctly connected to your Arduino Uno and matches the code, here is a circuit diagram for wiring the LCD to your Arduino. I'll describe the pin connections step-by-step, ensuring they align with the pin definitions in your code.
+
+### **Components Needed:**
+1. **16x2 LCD Display** (with 16 pins)
+2. **Arduino Uno**
+3. **10kΩ Potentiometer** (for LCD contrast control)
+4. **Push Buttons** (4x for count up, count down, stop/reset, and next exercise)
+5. **Jumper Wires** (M/M)
+6. **Breadboard**
+
+### **Pin Configuration Based on Your Code:**
+The code uses the following pin assignments for the LCD and buttons:
+- **LCD Pins**:
+  - RS: Pin 12
+  - EN: Pin 11
+  - D4: Pin 10
+  - D5: Pin 9
+  - D6: Pin 8
+  - D7: Pin 7
+- **Push Buttons**:
+  - Button 1 (Count Up): Pin 5
+  - Button 2 (Count Down): Pin 4
+  - Button 3 (Stop/Reset): Pin 3
+  - Button 4 (Next Exercise): Pin 2
+
+### **LCD to Arduino Wiring:**
+1. **VSS (Pin 1 on LCD)**: Connect to **GND** on Arduino.
+2. **VDD (Pin 2 on LCD)**: Connect to **5V** on Arduino.
+3. **V0 (Pin 3 on LCD)**: Connect to the **middle pin of the potentiometer**. The other two pins of the potentiometer connect to **GND** and **5V**. (This controls the contrast of the display).
+4. **RS (Pin 4 on LCD)**: Connect to **Pin 12** on Arduino.
+5. **RW (Pin 5 on LCD)**: Connect to **GND** (for write mode).
+6. **EN (Pin 6 on LCD)**: Connect to **Pin 11** on Arduino.
+7. **D4 (Pin 11 on LCD)**: Connect to **Pin 10** on Arduino.
+8. **D5 (Pin 12 on LCD)**: Connect to **Pin 9** on Arduino.
+9. **D6 (Pin 13 on LCD)**: Connect to **Pin 8** on Arduino.
+10. **D7 (Pin 14 on LCD)**: Connect to **Pin 7** on Arduino.
+11. **A (Pin 15 on LCD)**: Connect to **5V** (for the backlight).
+12. **K (Pin 16 on LCD)**: Connect to **GND** (for the backlight).
+
+### **Push Button to Arduino Wiring:**
+1. **Button 1 (Count Up)**: Connect one leg to **Pin 5**, and the other leg to **GND**.
+2. **Button 2 (Count Down)**: Connect one leg to **Pin 4**, and the other leg to **GND**.
+3. **Button 3 (Stop/Reset)**: Connect one leg to **Pin 3**, and the other leg to **GND**.
+4. **Button 4 (Next Exercise)**: Connect one leg to **Pin 2**, and the other leg to **GND**.
+
+You can add **pull-up resistors** if needed, but in your code, you are using the internal pull-up resistors via `PORTD |= (1 << btnX);`, so no external resistors are needed.
+
+### **Breadboard Setup Diagram:**
+To simulate this visually:
+- Place the LCD on the breadboard.
+- Wire the **RS, EN, D4-D7** pins to the corresponding Arduino pins as mentioned.
+- Wire the **VSS**, **VDD**, **RW**, and **backlight pins** for power connections.
+- Add the **10kΩ potentiometer** for adjusting the contrast of the LCD.
+- Connect the **four push buttons** to their respective pins (2, 3, 4, 5) on the Arduino, and one leg of each button should go to GND.
+
+Once wired up, upload your code and adjust the contrast using the potentiometer if the LCD screen is still only blue.
+
+### **Troubleshooting Tips:**
+1. **Backlight but No Text**: If the LCD is glowing but showing no characters, check the contrast (adjust the potentiometer). If it's still not working, double-check your wiring and the pin numbers defined in the code.
+2. **No Backlight**: Ensure the backlight pins (A and K) are correctly connected to **5V** and **GND**.
+3. **No Response from Buttons**: Check the connections from the buttons to the Arduino pins and make sure the pull-up resistors are enabled in the code.
+
+Let me know if you need further assistance!
