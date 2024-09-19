@@ -1,3 +1,8 @@
+https://wokwi.com/projects/371142586614838273
+
+
+
+
 #include <LiquidCrystal.h>
 
 // LCD pin configuration (RS, EN, D4, D5, D6, D7)
