@@ -108,7 +108,161 @@ void loop() {
       melodyPosition = 0;  // Loop back to the start of the melody
     }
   } else {
+
     noTone(buzzerPin);  // Ensure buzzer is off when stopped
   }
 }
+
+////////////////
+https://wokwi.com/projects/409472516168491009
+
+#include <avr/wdt.h>
+#include <LiquidCrystal.h>
+
+// LCD pin configuration (RS, EN, D4, D5, D6, D7)
+LiquidCrystal lcd(12, 11, 10, 9, 8, 7);
+
+// Push button pin definitions
+const int btnCountUp = 5;   // Push Button 1 for Count Up (PD5)
+const int btnCountDown = 4; // Push Button 2 for Count Down (PD4)
+const int btnStopReset = 3; // Push Button 3 for Stop/Reset (PD3)
+const int btnWaitIncrease = 2; // Push Button 4 for Wait Time Increase (PD2)
+
+// Stopwatch states
+enum State {
+  STOP,
+  COUNT_UP,
+  COUNT_DOWN
+};
+
+volatile State currentState = STOP;
+
+volatile int seconds = 0;
+volatile int tenths = 0;
+volatile bool counting = false;
+volatile int waitTime = 0; // Wait time in ms, increased by button 4
+
+// Timer1 interrupt service routine (ISR) for 10ms intervals
+ISR(TIMER1_COMPA_vect) {
+  if (currentState == COUNT_UP) {
+    tenths += 1;
+    if (tenths >= 10) {
+      tenths = 0;
+      seconds += 1;
+    }
+    if (seconds >= 20 && tenths == 0) {
+      currentState = STOP;
+      counting = false;
+    }
+  } else if (currentState == COUNT_DOWN) {
+    if (tenths == 0 && seconds > 0) {
+      tenths = 9;
+      seconds -= 1;
+    } else if (tenths > 0) {
+      tenths -= 1;
+    }
+    if (seconds == 0 && tenths == 0) {
+      currentState = STOP;
+      counting = false;
+    }
+  }
+}
+
+void setup() {
+  lcd.begin(16, 2); // 16x2 LCD initialization
+  lcd.clear();
+
+  // Button input configuration
+  DDRD &= ~(1 << btnCountUp);
+  DDRD &= ~(1 << btnCountDown);
+  DDRD &= ~(1 << btnStopReset);
+  DDRD &= ~(1 << btnWaitIncrease);
+
+  PORTD |= (1 << btnCountUp);
+  PORTD |= (1 << btnCountDown);
+  PORTD |= (1 << btnStopReset);
+  PORTD |= (1 << btnWaitIncrease);
+
+  // Timer1 setup for 10ms interrupts
+  noInterrupts();
+  TCCR1A = 0;
+  TCCR1B = 0;
+  TCNT1 = 0;
+  OCR1A = 1562; // Compare match value for 10ms
+  TCCR1B |= (1 << WGM12);
+  TCCR1B |= (1 << CS12) | (1 << CS10);
+  TIMSK1 |= (1 << OCIE1A);
+  interrupts();
+
+  // Watchdog Timer setup with 250ms timeout
+  wdt_enable(WDTO_250MS);
+}
+
+void loop() {
+  if (bit_is_clear(PIND, btnCountUp)) {  // Button 1 (Count Up)
+    if (!counting && currentState == STOP) {
+      currentState = COUNT_UP;
+      counting = true;
+    }
+    delay(200); // Debouncing
+  }
+
+  if (bit_is_clear(PIND, btnCountDown)) { // Button 2 (Count Down)
+    if (!counting && currentState == STOP) {
+      currentState = COUNT_DOWN;
+      counting = true;
+    }
+    delay(200); // Debouncing
+  }
+
+  if (bit_is_clear(PIND, btnStopReset)) { // Button 3 (Stop/Reset)
+    if (counting) {
+      counting = false;
+      currentState = STOP;
+    } else {
+      seconds = 0;
+      tenths = 0;
+    }
+    delay(200); // Debouncing
+  }
+
+  if (bit_is_clear(PIND, btnWaitIncrease)) { // Button 4 (Wait Time Increase)
+    waitTime += 60;  // Each press increases the wait time by 60ms
+    delay(200); // Debouncing
+  }
+
+  updateLCD(); // Update the LCD display
+
+  // Wait processing
+  for (int i = 0; i < waitTime / 60; i++) {
+    delay(60);
+  }
+
+  // Refresh watchdog timer to prevent reset
+  wdt_reset();
+}
+
+// Function to update the LCD display
+void updateLCD() {
+  lcd.setCursor(0, 0); // Display state on the first line
+  if (currentState == STOP) {
+    lcd.print("STOP       ");
+  } else if (currentState == COUNT_UP) {
+    lcd.print("COUNT_UP   ");
+  } else if (currentState == COUNT_DOWN) {
+    lcd.print("COUNT_DOWN ");
+  }
+
+  lcd.setCursor(0, 1); // Display time and wait time on the second line
+  lcd.print(seconds < 10 ? "0" : ""); // Add leading zero if necessary
+  lcd.print(seconds);
+  lcd.print(".");
+  lcd.print(tenths);
+  lcd.print(" s ");
+  lcd.print("wait: ");
+  lcd.print(waitTime);
+  lcd.print(" ms");
+}
+
+
 
