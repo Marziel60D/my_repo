@@ -1,1 +1,114 @@
+https://wokwi.com/projects/409728257464481793
+
+
+
+#include <EEPROM.h>
+#define NOTE_C4  262
+#define NOTE_G3  196
+#define NOTE_A3  220
+#define NOTE_B3  247
+
+// Pin definitions
+const int buttonPin1 = 6;   // Button 1 for toggling play/stop
+const int buttonPin2 = 5;   // Button 2 for recording pitch
+const int buzzerPin = 13;   // Speaker
+const int potPin = A0;      // Potentiometer
+
+// Melody settings (same as the original melody in "Tone Melody" example)
+int melody[] = { NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4 };
+int noteDurations[] = {4, 8, 8, 4, 4, 4, 4, 4};
+int numNotes = sizeof(melody) / sizeof(melody[0]);
+
+// Playback control variables
+bool isPlaying = true;
+int lastButton1State = LOW;
+int lastButton2State = LOW;
+int melodyPosition = 0;  // Keep track of where the melody stopped
+int storedPitchAdjust = 0; // Value stored in EEPROM
+int pitchAdjust = 0;  // Adjusted pitch based on potentiometer
+int potValue;
+int button1State;
+int button2State;
+int adjustedFrequency;
+int noteDuration;
+int savedPitch;
+
+void setup() {
+  pinMode(buttonPin1, INPUT);
+  pinMode(buttonPin2, INPUT);
+  pinMode(buzzerPin, OUTPUT);
+  Serial.begin(9600);
+
+  // Retrieve stored pitch adjust value from EEPROM (Address 0)
+  storedPitchAdjust = EEPROM.read(0);
+  Serial.print("Stored pitch from EEPROM: ");
+  Serial.println(storedPitchAdjust);
+}
+
+void loop() {
+  // Read potentiometer value and map it to pitch adjustment range (-100Hz to +100Hz)
+  potValue = analogRead(potPin);
+  pitchAdjust = map(potValue, 0, 1004, -100, 100);
+
+  // Add stored pitch adjust to the current value from the potentiometer
+  int totalPitchAdjust = storedPitchAdjust + pitchAdjust;
+  Serial.print("Total pitch adjust (stored + current): ");
+  Serial.println(totalPitchAdjust);
+
+  // Read button states
+  button1State = digitalRead(buttonPin1);
+  button2State = digitalRead(buttonPin2);
+
+  // Handle button 1 for toggling play/stop
+  if (button1State == HIGH && lastButton1State == LOW) {
+    isPlaying = !isPlaying;  // Toggle between play and stop
+    delay(50);               // Debouncing delay
+  }
+  lastButton1State = button1State;  // Update the last state of button 1
+
+  // Handle button 2 for recording pitch (can record even when melody is playing or stopped)
+  if (button2State == HIGH && lastButton2State == LOW) {
+    EEPROM.write(0, totalPitchAdjust);  // Store the total pitch adjustment value in EEPROM
+    storedPitchAdjust = totalPitchAdjust;  // Update the stored pitch
+    Serial.println("Pitch saved to EEPROM.");
+    delay(50);  // Debouncing delay
+  }
+  lastButton2State = button2State;  // Update the last state of button 2
+
+  // Handle simultaneous button press (both button 1 and 2)
+  if (button1State == HIGH && button2State == HIGH) {
+    isPlaying = false;  // Stop melody playback
+    melodyPosition = 0;  // Reset melody position to start
+  }
+
+  // Play melody if it's toggled to play mode
+  if (isPlaying) {
+    int currentNote = melody[melodyPosition];
+
+    // Apply stored and current pitch adjustment only if the note is not zero
+    if (currentNote != 0) {
+      adjustedFrequency = currentNote + totalPitchAdjust;
+      // Calculate note duration
+      noteDuration = 1000 / noteDurations[melodyPosition];
+      tone(buzzerPin, adjustedFrequency, noteDuration);
+      Serial.print("Playing note: ");
+      Serial.println(adjustedFrequency);
+    } else {
+      Serial.println("Resting (0 note).");
+      noTone(buzzerPin);  // Mute for rest (0 note)
+    }
+
+    // Wait for the note to finish playing
+    delay(noteDuration * 1.30);
+    noTone(buzzerPin);  // Stop the tone after playing
+
+    // Move to the next note
+    melodyPosition++;
+    if (melodyPosition >= numNotes) {
+      melodyPosition = 0;  // Loop back to the start of the melody
+    }
+  } else {
+    noTone(buzzerPin);  // Ensure buzzer is off when stopped
+  }
+}
 
