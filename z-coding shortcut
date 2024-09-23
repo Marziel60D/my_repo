@@ -166,6 +166,118 @@ volatile int waitTime = 0; // Wait time in ms, increased by button 4
 
 // Timer1 interrupt service routine (ISR) for 10ms intervals
 ISR(TIMER1_COMPA_vect) {
+  updateTime(); // Move time update logic to a function
+}
+
+void setup() {
+  lcd.begin(16, 2); // 16x2 LCD initialization
+  lcd.clear();
+
+  // Button input configuration
+  configureButtons();
+
+  // Timer1 setup for 10ms interrupts
+  setupTimer1();
+
+  // Watchdog Timer setup with 250ms timeout
+  wdt_enable(WDTO_250MS);
+}
+
+void loop() {
+  handleButtons();  // Process button presses
+  updateLCD();      // Update the LCD display
+  processWaitTime(); // Handle wait processing
+  refreshWatchdog(); // Refresh the watchdog timer
+}
+
+// Function to handle button presses and logic
+void handleButtons() {
+  if (isButtonPressed(btnCountUp)) {  // Button 1 (Count Up)
+    startCountUp();
+  }
+
+  if (isButtonPressed(btnCountDown)) { // Button 2 (Count Down)
+    startCountDown();
+  }
+
+  if (isButtonPressed(btnStopReset)) { // Button 3 (Stop/Reset)
+    stopOrReset();
+  }
+
+  if (isButtonPressed(btnWaitIncrease)) { // Button 4 (Wait Time Increase)
+    increaseWaitTime();
+  }
+}
+
+// Function to check if a button is pressed
+bool isButtonPressed(int buttonPin) {
+  if (bit_is_clear(PIND, buttonPin)) {
+    delay(200); // Debouncing delay
+    return true;
+  }
+  return false;
+}
+
+// Function to start counting up
+void startCountUp() {
+  if (!counting && currentState == STOP) {
+    currentState = COUNT_UP;
+    counting = true;
+  }
+}
+
+// Function to start counting down
+void startCountDown() {
+  if (!counting && currentState == STOP) {
+    currentState = COUNT_DOWN;
+    counting = true;
+  }
+}
+
+// Function to stop or reset the stopwatch
+void stopOrReset() {
+  if (counting) {
+    counting = false;
+    currentState = STOP;
+  } else {
+    seconds = 0;
+    tenths = 0;
+  }
+}
+
+// Function to increase the wait time by 60ms
+void increaseWaitTime() {
+  waitTime += 60;
+}
+
+// Function to configure button pins
+void configureButtons() {
+  DDRD &= ~(1 << btnCountUp);
+  DDRD &= ~(1 << btnCountDown);
+  DDRD &= ~(1 << btnStopReset);
+  DDRD &= ~(1 << btnWaitIncrease);
+
+  PORTD |= (1 << btnCountUp);
+  PORTD |= (1 << btnCountDown);
+  PORTD |= (1 << btnStopReset);
+  PORTD |= (1 << btnWaitIncrease);
+}
+
+// Function to set up Timer1 for 10ms intervals
+void setupTimer1() {
+  noInterrupts();
+  TCCR1A = 0;
+  TCCR1B = 0;
+  TCNT1 = 0;
+  OCR1A = 1562; // Compare match value for 10ms
+  TCCR1B |= (1 << WGM12);  // CTC mode
+  TCCR1B |= (1 << CS12) | (1 << CS10);  // Prescaler 1024
+  TIMSK1 |= (1 << OCIE1A);  // Enable timer compare interrupt
+  interrupts();
+}
+
+// Function to handle the updating of time
+void updateTime() {
   if (currentState == COUNT_UP) {
     tenths += 1;
     if (tenths >= 10) {
@@ -190,80 +302,6 @@ ISR(TIMER1_COMPA_vect) {
   }
 }
 
-void setup() {
-  lcd.begin(16, 2); // 16x2 LCD initialization
-  lcd.clear();
-
-  // Button input configuration
-  DDRD &= ~(1 << btnCountUp);
-  DDRD &= ~(1 << btnCountDown);
-  DDRD &= ~(1 << btnStopReset);
-  DDRD &= ~(1 << btnWaitIncrease);
-
-  PORTD |= (1 << btnCountUp);
-  PORTD |= (1 << btnCountDown);
-  PORTD |= (1 << btnStopReset);
-  PORTD |= (1 << btnWaitIncrease);
-
-  // Timer1 setup for 10ms interrupts
-  noInterrupts();
-  TCCR1A = 0;
-  TCCR1B = 0;
-  TCNT1 = 0;
-  OCR1A = 1562; // Compare match value for 10ms
-  TCCR1B |= (1 << WGM12);
-  TCCR1B |= (1 << CS12) | (1 << CS10);
-  TIMSK1 |= (1 << OCIE1A);
-  interrupts();
-
-  // Watchdog Timer setup with 250ms timeout
-  wdt_enable(WDTO_250MS);
-}
-
-void loop() {
-  if (bit_is_clear(PIND, btnCountUp)) {  // Button 1 (Count Up)
-    if (!counting && currentState == STOP) {
-      currentState = COUNT_UP;
-      counting = true;
-    }
-    delay(200); // Debouncing
-  }
-
-  if (bit_is_clear(PIND, btnCountDown)) { // Button 2 (Count Down)
-    if (!counting && currentState == STOP) {
-      currentState = COUNT_DOWN;
-      counting = true;
-    }
-    delay(200); // Debouncing
-  }
-
-  if (bit_is_clear(PIND, btnStopReset)) { // Button 3 (Stop/Reset)
-    if (counting) {
-      counting = false;
-      currentState = STOP;
-    } else {
-      seconds = 0;
-      tenths = 0;
-    }
-    delay(200); // Debouncing
-  }
-
-  if (bit_is_clear(PIND, btnWaitIncrease)) { // Button 4 (Wait Time Increase)
-    waitTime += 60;  // Each press increases the wait time by 60ms
-    delay(200); // Debouncing
-  }
-
-  updateLCD(); // Update the LCD display
-
-  // Wait processing
-  for (int i = 0; i < waitTime / 60; i++) {
-    delay(60);
-  }
-
-  // Refresh watchdog timer to prevent reset
-  wdt_reset();
-}
-
 // Function to update the LCD display
 void updateLCD() {
   lcd.setCursor(0, 0); // Display state on the first line
@@ -286,5 +324,15 @@ void updateLCD() {
   lcd.print(" ms");
 }
 
+// Function to process wait time after increasing it
+void processWaitTime() {
+  for (int i = 0; i < waitTime / 60; i++) {
+    delay(60);
+  }
+}
 
+// Function to refresh the watchdog timer
+void refreshWatchdog() {
+  wdt_reset();
+}
 
