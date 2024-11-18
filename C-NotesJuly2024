@@ -1,201 +1,25 @@
-Note title: C library to learn
-Note author: Marziel60D
-
-1. Standard Input/Output Library (stdio.h)
-Functions: printf(), scanf(), fprintf(), fscanf(), fgets(), fputs(), fopen(), fclose()
-Purpose: Provides functions for input and output operations, such as reading/writing from/to the console and files.
-
-2. String Manipulation Library (string.h)
-Functions: strlen(), strcpy(), strncpy(), strcat(), strcmp(), strstr(), memcpy()
-Purpose: Contains functions for manipulating C-style strings (character arrays) and memory blocks.
-
-3. Mathematics Library (math.h)
-Functions: sqrt(), pow(), sin(), cos(), tan(), log(), abs(), ceil(), floor()
-Purpose: Provides mathematical functions like power, trigonometric, logarithmic, and exponential functions.
-
-4. Dynamic Memory Allocation Library (stdlib.h)
-Functions: malloc(), calloc(), realloc(), free(), exit(), system(), atoi(), rand(), srand()
-Purpose: Includes functions for dynamic memory management, conversions, and process control.
-
-5. Time Library (time.h)
-Functions: time(), difftime(), clock(), asctime(), ctime(), gmtime(), localtime(), strftime()
-Purpose: Used for handling date and time operations, including getting the current time and manipulating time structures.
-
-6. Character Classification Library (ctype.h)
-Functions: isalpha(), isdigit(), isalnum(), isupper(), islower(), isspace(), toupper(), tolower()
-Purpose: Provides functions for classifying and converting characters (e.g., checking if a character is a letter or a digit).
-
-7. Error Handling Library (errno.h)
-Macros: errno, EDOM, ERANGE
-Purpose: Defines macros for reporting and handling errors, providing a mechanism to check for error conditions in library functions.
-
-8. Signal Handling Library (signal.h)
-Functions: signal(), raise(), kill(), alarm(), pause()
-Purpose: Used to handle various signals (e.g., interrupt signals) and signal-related actions in a C program.
-
-9. Input/Output Control Library (fcntl.h)
-Functions: open(), creat(), fcntl()
-Purpose: Provides functions for file handling at a lower level than the stdio.h library.
-
-10. File Control Operations Library (unistd.h)
-Functions: read(), write(), close(), lseek(), getpid(), fork(), exec()
-Purpose: Contains functions for interacting with the operating system, particularly in Unix-like systems (e.g., file descriptors and process control).
-
-11. Assert Library (assert.h)
-Functions: assert()
-Purpose: Allows for runtime diagnostics through the use of assertions, which help in debugging.
-
-12. Limits Library (limits.h)
-Macros: INT_MAX, INT_MIN, CHAR_MAX, LONG_MAX, LONG_MIN
-Purpose: Defines constants for the limits of basic data types (e.g., maximum and minimum values of int, char, long).
-
-13. Float Library (float.h)
-Macros: FLT_MAX, FLT_MIN, DBL_MAX, DBL_MIN
-Purpose: Defines macros for limits related to floating-point types (e.g., precision, maximum, and minimum values).
-
-14. Locale Library (locale.h)
-Functions: setlocale(), localeconv()
-Purpose: Provides functions for setting and querying the locale, which affects things like date and time formats, currency, and number formatting.
-
-15. Complex Numbers Library (complex.h)
-Functions: cabs(), creal(), cimag(), cexp(), clog()
-Purpose: Provides support for operations on complex numbers.
-
-16. Set Jump Library (setjmp.h)
-Functions: setjmp(), longjmp()
-Purpose: Provides non-local jumps, allowing for the saving and restoring of execution state, useful for error handling and recovery.
-
-17. Standard Integer Types Library (stdint.h)
-Macros/Types: int8_t, int16_t, int32_t, int64_t, uint8_t, UINT32_MAX, INTPTR_MAX
-Purpose: Defines exact-width integer types, as well as limits for integer types.
-
-18. Type Definitions Library (stddef.h)
-Macros/Types: size_t, ptrdiff_t, NULL, offsetof()
-Purpose: Contains type definitions for several standard types like size_t and ptrdiff_t.
 
 
 
-arnels debug at home:
-Arnel Jr Bruza
-#include <EEPROM.h>
-#define NOTE_C4  262
-#define NOTE_G3  196
-#define NOTE_A3  220
-#define NOTE_B3  247
+---
 
-// Pin definitions
-const int buttonPin1 = 6;   // Button 1 for toggling play/stop
-const int buttonPin2 = 5;   // Button 2 for recording pitch
-const int buzzerPin = 13;   // Speaker
-const int potPin = A0;      // Potentiometer
+1. わたしが ななさいの とき、うみで およぎました。
+(Watashi ga nanasai no toki, umi de oyogimashita.)
+Translation: "When I was seven years old, I swam in the ocean."
 
-// Melody settings (same as the original melody in "Tone Melody" example)
-int melody[] = { NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4 };
-int noteDurations[] = {4, 8, 8, 4, 4, 0, 4, 4, 4};
-int numNotes = sizeof(melody) / sizeof(melody[0]);
 
-// Playback control variables
-bool isPlaying = true;
-int lastButton1State = LOW;
-int lastButton2State = LOW;
-int melodyPosition = 0;  // Keep track of where the melody stopped
-int storedPitchAdjust = 0; // Value stored in EEPROM
-int pitchAdjust = 0;  // Adjusted pitch based on potentiometer
-int potValue;
-int button1State;
-int button2State;
-int adjustedFrequency;
-int noteDuration;
+2. わたしが ちゅうがく いちねんせいの とき、ポスター さくせい コンテストで ゆうしょうしました。
+(Watashi ga chuugaku ichinensei no toki, posutaa sakusei kontesuto de yuushou shimashita.)
+Translation: "When I was in 7th grade, I won a poster-making contest."
 
-int minPitchAdjust = -100;  // Initial minimum adjustment
-int maxPitchAdjust = 100;   // Initial maximum adjustment
 
-void setup() {
-  pinMode(buttonPin1, INPUT);
-  pinMode(buttonPin2, INPUT);
-  pinMode(buzzerPin, OUTPUT);
-  Serial.begin(9600);
+3. わたしが じゅうななさいの とき、みっかかん やまを ハイキングしました。
+(Watashi ga juunanasai no toki, mikka-kan yama o haikingu shimashita.)
+Translation: "When I was 17 years old, I hiked a mountain for three days."
 
-  // Retrieve stored pitch adjust value from EEPROM (Address 0)
-  storedPitchAdjust = EEPROM.read(0);
-  Serial.print("Stored pitch from EEPROM: ");
-  Serial.println(storedPitchAdjust);
 
-  // Adjust potentiometer range based on stored pitch
-  minPitchAdjust += storedPitchAdjust;  // Shift the range
-  maxPitchAdjust += storedPitchAdjust;
-}
 
-void loop() {
-  // Read potentiometer value and map it to the current pitch adjustment range
-  potValue = analogRead(potPin);
-  pitchAdjust = map(potValue, 0, 1023, minPitchAdjust, maxPitchAdjust);
 
-  // The total pitch adjustment is always stored + potentiometer adjustment
-  int totalPitchAdjust = constrain(storedPitchAdjust + pitchAdjust, minPitchAdjust, maxPitchAdjust);
-  Serial.print("Total pitch adjust (stored + current): ");
-  Serial.println(totalPitchAdjust);
+---
 
-  // Read button states
-  button1State = digitalRead(buttonPin1);
-  button2State = digitalRead(buttonPin2);
 
-  // Handle button 1 for toggling play/stop
-  if (button1State == HIGH && lastButton1State == LOW) {
-    isPlaying = !isPlaying;  // Toggle between play and stop
-    delay(50);               // Debouncing delay
-  }
-  lastButton1State = button1State;  // Update the last state of button 1
-
-  // Handle button 2 for recording pitch (can record even when melody is playing or stopped)
-  if (button2State == HIGH && lastButton2State == LOW) {
-    EEPROM.write(0, totalPitchAdjust);  // Store the total pitch adjustment value in EEPROM
-    storedPitchAdjust = totalPitchAdjust;  // Update the stored pitch immediately
-    Serial.println("Pitch saved to EEPROM.");
-
-    // Adjust the potentiometer range based on the new saved pitch
-    minPitchAdjust = -100 + storedPitchAdjust;
-    maxPitchAdjust = 100 + storedPitchAdjust;
-
-    delay(50);  // Debouncing delay
-  }
-  lastButton2State = button2State;  // Update the last state of button 2
-
-  // Handle simultaneous button press (both button 1 and 2)
-  if (button1State == HIGH && button2State == HIGH) {
-    isPlaying = false;  // Stop melody playback
-    melodyPosition = 0;  // Reset melody position to start
-  }
-
-  // Play melody if it's toggled to play mode
-  if (isPlaying) {
-    int currentNote = melody[melodyPosition];
-
-    // Apply stored and current pitch adjustment only if the note is not zero
-    if (currentNote != 0) {
-      adjustedFrequency = currentNote + totalPitchAdjust;
-      // Ensure adjusted frequency doesn't go below 0
-      adjustedFrequency = max(0, adjustedFrequency);
-      // Calculate note duration
-      noteDuration = 1000 / noteDurations[melodyPosition];
-      tone(buzzerPin, adjustedFrequency, noteDuration);
-      Serial.print("Playing note: ");
-      Serial.println(adjustedFrequency);
-    } else {
-      Serial.println("Resting (0 note).");
-      noTone(buzzerPin);  // Mute for rest (0 note)
-    }
-
-    // Wait for the note to finish playing
-    delay(noteDuration * 1.30);
-    noTone(buzzerPin);  // Stop the tone after playing
-
-    // Move to the next note
-    melodyPosition++;
-    if (melodyPosition >= numNotes) {
-      melodyPosition = 0;  // Loop back to the start of the melody
-    }
-  } else {
-    noTone(buzzerPin);  // Ensure buzzer is off when stopped
-  }
-}
