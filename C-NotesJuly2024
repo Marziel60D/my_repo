@@ -1,70 +1,45 @@
-https://skribbl.io/?HVCguVI6
-
-### **Easy (50 words):**  
-Cat, Dog, Sun, Ball, Tree, Apple, House, Chair, Book, Car, Fish, Bird, Water, Flower, Table, Moon, Hat, Shoe, Pizza, Cake, Cloud, Ice, Snow, Cup, Pizza, Door, Bike, Ring, Pillow, TV, Brush, Bed, Pencil, Paper, Spoon, Fork, Candle, Boat, Rainbow, Keyboard, Cake, Glass, Clock, Helmet, Pizza, Shoe, Lion, Shark, Rocket, Music
-
-### **Medium Easy (50 words):**  
-Elephant, Giraffe, Train, Camera, Turtle, Guitar, Castle, Balloons, Ice cream, Mountain, Hamburger, Cupcake, Frog, Wizard, Robot, Ghost, Cup, Pirate, Rainbow, Jellyfish, Rocket, Spider, Dragon, Guitar, Spider, Monkey, Dinosaur, Balloon, Beach, Park, Cupcake, Snowman, Keyboard, Pen, Helicopter, Pizza, Cloud, Kite, Treasure, Camera, Treehouse, Starfish, Tractor, Sandwich, Whale, Wizard, Boat, Notebook, Window, Ghost
-
-### **Normal (50 words):**  
-Dinosaur, Helicopter, Artist, Mushroom, Coffee, School, Pirate, Treasure, Telescope, Volcano, Laboratory, Jellybean, Wizard, Vampire, Spaghetti, Telescope, Maze, Mirror, Telescope, Sunflower, Smartphone, Unicorn, Butterfly, Cardboard, Parrot, Volcano, Unicorn, Ghost, Calendar, Iceberg, Shark, Saxophone, Moonlight, Trolley, Mirror, Microwave, Ice cream, Sunglasses, Volcano, Bicycle, Calendar, Guitar, Lighthouse, Zookeeper, Snowboard, Tornado, Computer, Newspaper, Robot, Panda
-
-### **Slightly Hard (50 words):**  
-Tornado, Astronaut, Statue, Scarecrow, Chameleon, Jukebox, Pyramids, Compass, Scorpion, Parachute, Helicopter, Microscope, Telescope, Slingshot, Caramel, Waterfall, Cactus, Submarine, Eyelashes, Tornado, Pirate ship, Ostrich, Squirrel, Caviar, Circuit, Calendar, Mermaid, Skateboard, Karate, Aquarium, Hot air balloon, Labyrinth, Watermelon, Tornado, Satellite, Astronaut, Moonlight, Submarine, Knight, Jellyfish, Guitarist, Telescope, Firetruck, Hammerhead, Dragonfly, Popcorn, Scarecrow, Lava, Marzipan, Whirlpool
-
-
----
-
-https://wheelofnames.com/s2s-bxu
-https://wheelofnames.com/hb3-ruf
-
-Office-Themed: What does the acronym PDF stand for?
-
-Science: What is the chemical symbol for water?
-
-Survival Question: You’re stranded on a desert island. You can only bring one office supply item. What would it be and why?
-
-Time Travel: If you could travel to any year, past or future, which one would you choose and why?
-
-Word Game: Name three things in the office that start with the letter B (e.g., Binder, Ballpen, Bag).
-
-Imagination Test: If our office were a theme park, what would one of the rides be called?
-
-Team Question: What’s one thing you think everyone in the office would do if there were no rules for a day?
-
-Office Drama: If our office were a soap opera, what would the title of the show be and why?
-
-Dream Team: If you could team up with any fictional character to finish a big project, who would you pick?
-
-Endless Workday: If the power went out during a big deadline, what’s the one task you’d try to finish with no electricity?
-
-Alien Colleague: An alien joins DENSO as an intern. What’s the first task you’d assign them and why?
-
-Office Olympics: If DENSO held an Office Olympics, what event would you win gold in, prove you answer?
-
-Funniest Alarm: If the break time alarm was replaced with a funny sound, what would you choose? please provide a short demo.
-
-Battle of Choices: Would you rather have your chair replaced with a rocking horse or your keyboard replaced with a typewriter and why?
-
-If you could combine two animals into one, what would they be called?
-
-If you could live in any fictional world, where would it be?
-
-If animals could talk, which one would be the funniest to have a conversation with?
-
-If you could switch lives with a cartoon character for a day, who would it be and why?
-
-If you were a character in a video game, what would your special move be?
-
-If you were a wizard, what’s the first spell you’d learn and why?
-
-What if everything you touched turned into marshmallows(excluding your body)—what’s the first thing you’d avoid touching?
-
-What if chairs suddenly refused to be sat on—what would be your plan B?
-
-What if your team could only communicate through charades for a day—who would be the best and worst at it?
+-------------------------------------------------------------------------------------------------------
+| Main Condition                                | Subcondition                | Description                                | True Case (x, y)     | False Case (x, y)   |
+-------------------------------------------------------------------------------------------------------
+| 1. (x ≠ y)                                    | x ≠ y                       | x and y must be different                 | x = 0, y = 768       | x = 0, y = 0        |
+|                                               |                             | Must be equal to proceed                   | x = 0, y = 768       | x = 0, y = 0        |
+-------------------------------------------------------------------------------------------------------
+| 2. (x & 1792) ≠ 0 AND (x & 1792) ≠ 256 AND    | (x & 1792) ≠ 0              | x must have bits set in 1792 mask         | x = 768, y = 768     | x = 0, y = 0        |
+| (x & 1792) ≠ 512                              |                             |                                           |                      |                      |
+|                                               | (x & 1792) ≠ 256            | x must not have 256 (0b100000000)         | x = 768, y = 768     | x = 256, y = 256    |
+|                                               | (x & 1792) ≠ 512            | x must not have 512 (0b1000000000)        | x = 768, y = 768     | x = 512, y = 512    |
+-------------------------------------------------------------------------------------------------------
+| 3. (y & 1792) ≠ 0 AND (y & 1792) ≠ 256 AND    | (y & 1792) ≠ 0              | y must have bits set in 1792 mask         | x = 1024, y = 1024   | x = 0, y = 0        |
+| (y & 1792) ≠ 512                              |                             |                                           |                      |                      |
+|                                               | (y & 1792) ≠ 256            | y must not have 256 (0b100000000)         | x = 1024, y = 1024   | x = 256, y = 256    |
+|                                               | (y & 1792) ≠ 512            | y must not have 512 (0b1000000000)        | x = 1024, y = 1024   | x = 512, y = 512    |
+-------------------------------------------------------------------------------------------------------
 
 
----
 
-
+table: |
+  -----------------------------------------------------------------------------------------------------
+  | Main Condition (If Condition)                           | Subcondition              | Description                                                        | True Case (x, y)   | False Case (x, y)  |
+  -----------------------------------------------------------------------------------------------------
+  | 1. (x ≠ y)                                                                           | x ≠ y                                   | x and y must be different                              | x = 0, y = 768     | x = 0, y = 0       |
+  -----------------------------------------------------------------------------------------------------
+  | 2. (x & 1792) ≠ 0 AND (x & 1792) ≠ 256 AND       | (x & 1792) ≠ 0                | x must have bits set in 1792 mask             | x = 768, y = 768   | x = 0, y = 0              |
+  |    (x & 1792) ≠ 512                                                        |                                              |                                                                                       |                                                                           |                     
+  |                                                                                               | (x & 1792) ≠ 256          | x must not have 256 (0b100000000)             | x = 768, y = 768   | x = 256, y = 256   |
+  |                                                                                               | (x & 1792) ≠ 512          | x must not have 512 (0b1000000000)          | x = 768, y = 768   | x = 512, y = 512    |
+  -----------------------------------------------------------------------------------------------------
+  | 3. (y & 1792) ≠ 0 AND (y & 1792) ≠ 256 AND       | (y & 1792) ≠ 0            | y must have bits set in 1792 mask         | x = 1024, y = 1024 | x = 0, y = 0       |
+  |    (y & 1792) ≠ 512                                                        |                            |                                           |                    |                    |
+  |                                                   		                  | (y & 1792) ≠ 256          | y must not have 256 (0b100000000)         | x = 1024, y = 1024 | x = 256, y = 256   |
+  |                                                 		               | (y & 1792) ≠ 512          | y must not have 512 (0b1000000000)        | x = 1024, y = 1024 | x = 512, y = 512   |
+  -----------------------------------------------------------------------------------------------------
+  | Else Condition                                   | Subcondition              | Description                                         | True Case (x, y)      | False Case (x, y)  |
+  -----------------------------------------------------------------------------------------------------
+  | 4. z = ((x & 8128) + (y & 8128)) / 2            |                                  | Calculation of z                           |                                         |                                    |
+  -----------------------------------------------------------------------------------------------------
+  | 5. if (z ≠ 0)                                       	   | z ≠ 0                        | z must be nonzero                          | x = 64, y = 64            | x = 0, y = 0            |
+  -----------------------------------------------------------------------------------------------------
+  | 6. else if (z ≠ 256)                            	   | z ≠ 256                   | z must not be 256                           | x = 128, y = 128       | x = 256, y = 256   |
+  -----------------------------------------------------------------------------------------------------
+  | 7. else if (z ≠ 512)                        	       | z ≠ 512                   | z must not be 512                            | x = 1024, y = 1024 | x = 512, y = 512   |
+  -----------------------------------------------------------------------------------------------------
