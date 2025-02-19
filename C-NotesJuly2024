@@ -13,7 +13,7 @@ Main Condition (If Condition):
 
 Else Condition:
   - Subcondition         : Description                           : True Case (x, y)      : False Case (x, y)
-  - z = ((x & 8128) + (y & 8128)) : Calculation of z          :                         : 
-  - if (z = 0)          : z must be exactly 0                  : x = 0, y = 0         : x = 64, y = 64
-  - else if (z = 256)   : z must be exactly 256                : x = 128, y = 128     : x = 256, y = 256
-  - else if (z = 512)   : z must be exactly 512                : x = 256, y = 256     : x = 512, y = 512
+  - z = ((x & 0x700) & (y & 0x700)) : Calculation of z          :                         : 
+  - if (z = 0)          : z must be 0                           : x = 0, y = 0          : x = 256, y = 256
+  - else if (z = 256)   : z must be exactly 256                 : x = 256, y = 256      : x = 512, y = 512
+  - else if (z = 512)   : z must be exactly 512                 : x = 512, y = 512      : x = 256, y = 256
