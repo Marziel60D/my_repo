@@ -18,7 +18,10 @@ Love?? I think...never saw me..
 Me, myself, and I saw me as a water, either a blessing or the disaster,
 Or a bastard f*cker  who compares people with animals .
 
+I have excel files for each of my team member, let say we're 5 member, Gehlee, Eli, Seowon, yoona and ME, in this member file cell colomn A contains planned time and in colomn B contains Actual time consumed for each task, in cell D it contains productivity percetage which is equal to planned time/ Actual time, and in coloum E the month when the task is performed
 
+Now I have this overall file which show each members productivity each month, on cell A the name of the members, and on colomn B and the proceding colomn contains the monthy productivity of the member and to compute monthly productivity of each member its equal to the sum of planned time/sum of actual time that month.
+Now can create me this files while linking members file to overall files, you can add VBA for excel if you can but it wont be necessary if the excel performs well
 
 
 
