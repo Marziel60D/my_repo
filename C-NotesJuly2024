@@ -1,3 +1,141 @@
+https://chatgpt.com/share/68260416-2f58-8005-bf18-a6307c881fff
+
+
+
+Sub BuildAprilProductivityMatrix()
+
+    Dim fDialog As FileDialog
+    Dim folderPath As String, fileName As String
+    Dim wbMember As Workbook, ws As Worksheet
+    Dim memberName As String
+    Dim sheetsToCheck As Variant, sheetCode As Variant
+    Dim roleList As Variant
+    Dim iRow As Long, iCol As Long
+    Dim dataRow As Long
+    Dim monthVal As String, roleVal As String, toyotaVal As String
+    Dim plannedVal As Double, actualVal As Double
+    Dim plannedSum(1 To 5, 1 To 2) As Double ' 5 sheets x 2 roles
+    Dim actualSum(1 To 5, 1 To 2) As Double
+    Dim masterWS As Worksheet
+    
+    ' === CONFIG ===
+    sheetsToCheck = Array("UT Data", "ST Data", "PO Data", "DC Data", "CD Data")
+    sheetCode = Array("UT", "ST", "PO", "DC", "CD")
+    roleList = Array("author", "checker")
+    Set masterWS = ThisWorkbook.Sheets("Summary")
+
+    ' === CLEAR OLD ===
+    masterWS.Cells.Clear
+    masterWS.Range("A1").Value = "Members"
+    masterWS.Range("B1:K1").Value = Array("UT Author", "UT Checker", "ST Author", "ST Checker", _
+                                          "PO Author", "PO Checker", "DC Author", "DC Checker", "CD Author", "CD Checker")
+    masterWS.Range("A2").Value = "April Productivity"
+    
+    ' === FOLDER DIALOG ===
+    Set fDialog = Application.FileDialog(msoFileDialogFolderPicker)
+    If fDialog.Show <> -1 Then Exit Sub
+    folderPath = fDialog.SelectedItems(1) & "\"
+    
+    iRow = 3
+    fileName = Dir(folderPath & "*2025 productivity.xlsx")
+    
+    Do While fileName <> ""
+        memberName = Replace(fileName, " 2025 productivity.xlsx", "")
+        
+        ' Reset counters
+        For i = 1 To 5
+            For j = 1 To 2
+                plannedSum(i, j) = 0
+                actualSum(i, j) = 0
+            Next j
+        Next i
+        
+        Set wbMember = Workbooks.Open(folderPath & fileName, ReadOnly:=True)
+        
+        For i = 0 To 4 ' 5 sheets
+            If WorksheetExists(sheetsToCheck(i), wbMember) Then
+                Set ws = wbMember.Sheets(sheetsToCheck(i))
+                For dataRow = 7 To 150
+                    monthVal = LCase(Trim(ws.Cells(dataRow, 2).Value))
+                    roleVal = LCase(Trim(ws.Cells(dataRow, 11).Value)) ' K
+                    toyotaVal = LCase(Trim(ws.Cells(dataRow, 12).Value)) ' L
+                    
+                    If monthVal = "april" And toyotaVal = "toyota" Then
+                        For j = 0 To 1 ' author, checker
+                            If roleVal = roleList(j) Then
+                                plannedVal = Val(ws.Cells(dataRow, 6).Value)
+                                actualVal = Val(ws.Cells(dataRow, 8).Value)
+                                plannedSum(i + 1, j + 1) = plannedSum(i + 1, j + 1) + plannedVal
+                                actualSum(i + 1, j + 1) = actualSum(i + 1, j + 1) + actualVal
+                            End If
+                        Next j
+                    End If
+                Next dataRow
+            End If
+        Next i
+        
+        ' === OUTPUT TO MASTER ===
+        masterWS.Cells(iRow, 1).Value = memberName
+        
+        iCol = 2
+        For i = 1 To 5
+            For j = 1 To 2
+                If actualSum(i, j) <> 0 Then
+                    masterWS.Cells(iRow, iCol).Value = Round(plannedSum(i, j) / actualSum(i, j), 2)
+                Else
+                    masterWS.Cells(iRow, iCol).Value = "-"
+                End If
+                iCol = iCol + 1
+            Next j
+        Next i
+        
+        wbMember.Close False
+        iRow = iRow + 1
+        fileName = Dir
+    Loop
+    
+    MsgBox "✅ April Productivity Matrix Completed!", vbInformation
+
+End Sub
+
+Private Function WorksheetExists(wsName As String, wb As Workbook) As Boolean
+    On Error Resume Next
+    WorksheetExists = Not wb.Sheets(wsName) Is Nothing
+    On Error GoTo 0
+End Function
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Sharing a poem bout myself, I created back then thats still true today,
 I am (Mark Daniel C., 2016)
 Sometimes people saw me as a clown,
