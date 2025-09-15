@@ -1,316 +1,105 @@
-https://chatgpt.com/share/68260416-2f58-8005-bf18-a6307c881fff
-https://chatgpt.com/share/68260416-2f58-8005-bf18-a6307c881fff
+I wanted to create a macro that extracts table data in an doc file, its for program testing, so by just selecting the list incomplete variable name in the active sheet I want the macro to get the complete variable name, its variable data name and its LSB in the doc file by going to its location in the file explorer then selecting it, the doc file consist of many data but I want the macro to check the tables only and find whats necessary for me, the table usually have the complete variable name with its data name and its lsb in one line, each has its columns, can you make it for me?
 
 
-Sub BuildAprilProductivityMatrix()
 
-    Dim fDialog As FileDialog
-    Dim folderPath As String, fileName As String
-    Dim wbMember As Workbook, ws As Worksheet
-    Dim memberName As String
-    Dim sheetsToCheck As Variant, sheetCode As Variant
-    Dim roleList As Variant
-    Dim iRow As Long, iCol As Long
-    Dim dataRow As Long
-    Dim monthVal As String, roleVal As String, toyotaVal As String
-    Dim plannedVal As Double, actualVal As Double
-    Dim plannedSum(1 To 5, 1 To 2) As Double ' 5 sheets x 2 roles
-    Dim actualSum(1 To 5, 1 To 2) As Double
-    Dim masterWS As Worksheet
-    
-    ' === CONFIG ===
-    sheetsToCheck = Array("UT Data", "ST Data", "PO Data", "DC Data", "CD Data")
-    sheetCode = Array("UT", "ST", "PO", "DC", "CD")
-    roleList = Array("author", "checker")
-    Set masterWS = ThisWorkbook.Sheets("Summary")
 
-    ' === CLEAR OLD ===
-    masterWS.Cells.Clear
-    masterWS.Range("A1").Value = "Members"
-    masterWS.Range("B1:K1").Value = Array("UT Author", "UT Checker", "ST Author", "ST Checker", _
-                                          "PO Author", "PO Checker", "DC Author", "DC Checker", "CD Author", "CD Checker")
-    masterWS.Range("A2").Value = "April Productivity"
+Option Explicit
+
+Sub ExtractSelectedVariableFromWord()
+    Dim wdApp As Object, wdDoc As Object
+    Dim fd As FileDialog
+    Dim tbl As Object, rw As Object
+    Dim wsOut As Worksheet
+    Dim outRow As Long
+    Dim searchValue As String
+    Dim foundFlag As Boolean
+    Dim filePath As String
     
-    ' === FOLDER DIALOG ===
-    Set fDialog = Application.FileDialog(msoFileDialogFolderPicker)
-    If fDialog.Show <> -1 Then Exit Sub
-    folderPath = fDialog.SelectedItems(1) & "\"
+    ' Get variable from current cell
+    If IsEmpty(ActiveCell.Value) Then
+        MsgBox "Please select a cell with the incomplete variable name ?", vbExclamation
+        Exit Sub
+    End If
+    searchValue = Trim(ActiveCell.Value)
     
-    iRow = 3
-    fileName = Dir(folderPath & "*2025 productivity.xlsx")
+    ' Prompt user to select Word file
+    Set fd = Application.FileDialog(msoFileDialogFilePicker)
+    With fd
+        .Title = "Select Word Document"
+        .Filters.Clear
+        .Filters.Add "Word Documents", "*.doc; *.docx"
+        If .Show <> -1 Then Exit Sub
+        filePath = .SelectedItems(1)
+    End With
     
-    Do While fileName <> ""
-        memberName = Replace(fileName, " 2025 productivity.xlsx", "")
-        
-        ' Reset counters
-        For i = 1 To 5
-            For j = 1 To 2
-                plannedSum(i, j) = 0
-                actualSum(i, j) = 0
-            Next j
-        Next i
-        
-        Set wbMember = Workbooks.Open(folderPath & fileName, ReadOnly:=True)
-        
-        For i = 0 To 4 ' 5 sheets
-            If WorksheetExists(sheetsToCheck(i), wbMember) Then
-                Set ws = wbMember.Sheets(sheetsToCheck(i))
-                For dataRow = 7 To 150
-                    monthVal = LCase(Trim(ws.Cells(dataRow, 2).Value))
-                    roleVal = LCase(Trim(ws.Cells(dataRow, 11).Value)) ' K
-                    toyotaVal = LCase(Trim(ws.Cells(dataRow, 12).Value)) ' L
-                    
-                    If monthVal = "april" And toyotaVal = "toyota" Then
-                        For j = 0 To 1 ' author, checker
-                            If roleVal = roleList(j) Then
-                                plannedVal = Val(ws.Cells(dataRow, 6).Value)
-                                actualVal = Val(ws.Cells(dataRow, 8).Value)
-                                plannedSum(i + 1, j + 1) = plannedSum(i + 1, j + 1) + plannedVal
-                                actualSum(i + 1, j + 1) = actualSum(i + 1, j + 1) + actualVal
-                            End If
-                        Next j
-                    End If
-                Next dataRow
+    ' Start Word
+    On Error Resume Next
+    Set wdApp = GetObject(, "Word.Application")
+    If wdApp Is Nothing Then
+        Set wdApp = CreateObject("Word.Application")
+    End If
+    On Error GoTo 0
+    
+    wdApp.Visible = False
+    Set wdDoc = wdApp.Documents.Open(filePath, ReadOnly:=True)
+    
+    ' Prepare output sheet
+    On Error Resume Next
+    Set wsOut = ThisWorkbook.Sheets("Variables_Listing")
+    If Not wsOut Is Nothing Then
+        Application.DisplayAlerts = False
+        wsOut.Delete
+        Application.DisplayAlerts = True
+    End If
+    On Error GoTo 0
+    
+    Set wsOut = ThisWorkbook.Sheets.Add
+    wsOut.Name = "Variables_Listing"
+    
+    ' Headers
+    wsOut.Cells(1, 1).Value = "Variable Searched"
+    wsOut.Cells(1, 2).Value = "LSB"
+    wsOut.Cells(1, 3).Value = "Data Name (Japanese)"
+    wsOut.Cells(1, 4).Value = "Complete Variable Name"
+    
+    outRow = 2
+    foundFlag = False
+    
+    ' Loop Word tables
+    For Each tbl In wdDoc.Tables
+        For Each rw In tbl.Rows
+            ' Col 1 = Variable Name
+            If InStr(1, rw.Cells(1).Range.Text, searchValue, vbTextCompare) > 0 Then
+                wsOut.Cells(outRow, 1).Value = searchValue
+                wsOut.Cells(outRow, 2).Value = CleanCellText(rw.Cells(4).Range.Text) ' LSB
+                wsOut.Cells(outRow, 3).Value = CleanCellText(rw.Cells(2).Range.Text) ' Data Name
+                wsOut.Cells(outRow, 4).Value = CleanCellText(rw.Cells(1).Range.Text) ' Complete Var
+                foundFlag = True
+                Exit For
             End If
-        Next i
-        
-        ' === OUTPUT TO MASTER ===
-        masterWS.Cells(iRow, 1).Value = memberName
-        
-        iCol = 2
-        For i = 1 To 5
-            For j = 1 To 2
-                If actualSum(i, j) <> 0 Then
-                    masterWS.Cells(iRow, iCol).Value = Round(plannedSum(i, j) / actualSum(i, j), 2)
-                Else
-                    masterWS.Cells(iRow, iCol).Value = "-"
-                End If
-                iCol = iCol + 1
-            Next j
-        Next i
-        
-        wbMember.Close False
-        iRow = iRow + 1
-        fileName = Dir
-    Loop
+        Next rw
+        If foundFlag Then Exit For
+    Next tbl
     
-    MsgBox "✅ April Productivity Matrix Completed!", vbInformation
-
+    ' If not found
+    If Not foundFlag Then
+        wsOut.Cells(outRow, 1).Value = searchValue
+        wsOut.Cells(outRow, 2).Value = "? Not found"
+        wsOut.Cells(outRow, 3).Value = ""
+        wsOut.Cells(outRow, 4).Value = ""
+    End If
+    
+    ' Cleanup
+    wdDoc.Close False
+    wdApp.Quit
+    Set wdDoc = Nothing
+    Set wdApp = Nothing
+    
+    MsgBox "Search complete ?? Check 'Variables_Listing' sheet.", vbInformation
 End Sub
 
-Private Function WorksheetExists(wsName As String, wb As Workbook) As Boolean
-    On Error Resume Next
-    WorksheetExists = Not wb.Sheets(wsName) Is Nothing
-    On Error GoTo 0
+' Helper to clean Word cell text
+Function CleanCellText(txt As String) As String
+    CleanCellText = Trim(Replace(txt, Chr(13) & Chr(7), ""))
 End Function
-
-
-
-/*new*/
-
-
-Sub BuildFYProductivityMatrix()
-
-    Dim fDialog As FileDialog
-    Dim folderPath As String, fileName As String
-    Dim wbMember As Workbook, ws As Worksheet
-    Dim memberName As String
-    Dim wsNames As Variant, wsCodes As Variant, roles As Variant
-    Dim months(1 To 12) As String, mLabels(1 To 12) As String
-    Dim monthMap As Object
-    Dim iRow As Long, iCol As Long
-    Dim dataRow As Long, mIndex As Long, sIndex As Long, rIndex As Long
-    Dim monthVal As String, roleVal As String, toyotaVal As String
-    Dim plannedVal As Double, actualVal As Double
-    Dim plannedSum(1 To 12, 1 To 5, 1 To 2) As Double
-    Dim actualSum(1 To 12, 1 To 5, 1 To 2) As Double
-    Dim masterWS As Worksheet
-    Dim i As Long, j As Long, k As Long
-
-    ' === CONFIG ===
-    wsNames = Array("UT Data", "ST Data", "PO Data", "DC Data", "CD Data")
-    wsCodes = Array("UT", "ST", "PO", "DC", "CD")
-    roles = Array("author", "checker")
-    
-    ' Fiscal year April 2025 to March 2026
-    months = Array("april", "may", "june", "july", "august", "september", _
-                   "october", "november", "december", "january", "february", "march")
-    mLabels = Array("Apr-25", "May-25", "Jun-25", "Jul-25", "Aug-25", "Sep-25", _
-                    "Oct-25", "Nov-25", "Dec-25", "Jan-26", "Feb-26", "Mar-26")
-    
-    Set monthMap = CreateObject("Scripting.Dictionary")
-    For i = 0 To 11
-        monthMap.Add months(i), i + 1 ' map "april" => 1, ..., "march" => 12
-    Next i
-
-    Set masterWS = ThisWorkbook.Sheets("Summary")
-    masterWS.Cells.Clear
-    
-    ' === BUILD HEADER ROW ===
-    masterWS.Cells(1, 1).Value = "Members"
-    iCol = 2
-    For i = 0 To 11
-        For j = 0 To 4
-            For k = 0 To 1
-                masterWS.Cells(1, iCol).Value = mLabels(i) & " " & wsCodes(j) & " " & Application.WorksheetFunction.Proper(roles(k))
-                iCol = iCol + 1
-            Next k
-        Next j
-    Next i
-
-    ' === FOLDER SELECT ===
-    Set fDialog = Application.FileDialog(msoFileDialogFolderPicker)
-    If fDialog.Show <> -1 Then Exit Sub
-    folderPath = fDialog.SelectedItems(1) & "\"
-
-    ' === PROCESS EACH FILE ===
-    iRow = 2
-    fileName = Dir(folderPath & "*2025 productivity.xlsx")
-
-    Do While fileName <> ""
-        memberName = Replace(fileName, " 2025 productivity.xlsx", "")
-
-        ' Reset counters
-        For m = 1 To 12: For j = 1 To 5: For k = 1 To 2
-            plannedSum(m, j, k) = 0
-            actualSum(m, j, k) = 0
-        Next: Next: Next
-
-        Set wbMember = Workbooks.Open(folderPath & fileName, ReadOnly:=True)
-
-        For sIndex = 0 To 4
-            If WorksheetExists(wsNames(sIndex), wbMember) Then
-                Set ws = wbMember.Sheets(wsNames(sIndex))
-
-                For dataRow = 7 To 150
-                    monthVal = LCase(Trim(ws.Cells(dataRow, 2).Value))
-                    roleVal = LCase(Trim(ws.Cells(dataRow, 11).Value))
-                    toyotaVal = LCase(Trim(ws.Cells(dataRow, 12).Value))
-
-                    If monthMap.exists(monthVal) And toyotaVal = "toyota" Then
-                        mIndex = monthMap(monthVal)
-                        For rIndex = 0 To 1
-                            If roleVal = roles(rIndex) Then
-                                plannedVal = Val(ws.Cells(dataRow, 6).Value)
-                                actualVal = Val(ws.Cells(dataRow, 8).Value)
-                                plannedSum(mIndex, sIndex + 1, rIndex + 1) = plannedSum(mIndex, sIndex + 1, rIndex + 1) + plannedVal
-                                actualSum(mIndex, sIndex + 1, rIndex + 1) = actualSum(mIndex, sIndex + 1, rIndex + 1) + actualVal
-                            End If
-                        Next rIndex
-                    End If
-                Next dataRow
-            End If
-        Next sIndex
-
-        ' === WRITE ROW TO SUMMARY ===
-        masterWS.Cells(iRow, 1).Value = memberName
-        iCol = 2
-
-        For m = 1 To 12
-            For j = 1 To 5
-                For k = 1 To 2
-                    If actualSum(m, j, k) <> 0 Then
-                        masterWS.Cells(iRow, iCol).Value = Round(plannedSum(m, j, k) / actualSum(m, j, k), 2)
-                    Else
-                        masterWS.Cells(iRow, iCol).Value = "-"
-                    End If
-                    iCol = iCol + 1
-                Next k
-            Next j
-        Next m
-
-        wbMember.Close False
-        iRow = iRow + 1
-        fileName = Dir
-    Loop
-
-    MsgBox "✅ FY April 2025 to March 2026 productivity matrix created!", vbInformation
-
-End Sub
-
-Private Function WorksheetExists(wsName As String, wb As Workbook) As Boolean
-    On Error Resume Next
-    WorksheetExists = Not wb.Sheets(wsName) Is Nothing
-    On Error GoTo 0
-End Function
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Sharing a poem bout myself, I created back then thats still true today,
-I am (Mark Daniel C., 2016)
-Sometimes people saw me as a clown,
-Sometimes people saw me double edge knife,
-A snake saw me as a joke, uncapable,
-A crab saw me as the ground, never been equal,
-A fox saw me as a monkey,
-The turtle saw me as a seed, grows into anything,
-But close people saw me as a flame, a scorching one, destroying everything once in rage,
-A friend saw me as a cat, clingy but can't be pet,
-A best friend saw me either an angel or a demon, comfort, sensitive and honest.
-A family saw me as sheep, to guide or a sacrifice.
-Siblings saw me as a little spider, a mastermind,
-Mom saw me as a little kitty on the street, 
-Home saw me as flower, a delicate one, needs protection and care.
-Rare people saw me as a shade, someone they can rest on.
-Love?? I think...never saw me..
-Me, myself, and I saw me as a water, either a blessing or the disaster,
-Or a bastard f*cker  who compares people with animals .
-
-I have excel files for each of my team member, let say we're 5 member, Gehlee, Eli, Seowon, yoona and ME, in this member file cell colomn A contains planned time and in colomn B contains Actual time consumed for each task, in cell D it contains productivity percetage which is equal to planned time/ Actual time, and in coloum E the month when the task is performed
-
-Now I have this overall file which show each members productivity each month, on cell A the name of the members, and on colomn B and the proceding colomn contains the monthy productivity of the member and to compute monthly productivity of each member its equal to the sum of planned time/sum of actual time that month.
-Now can create me this files while linking members file to overall files, you can add VBA for excel if you can but it wont be necessary if the excel performs well
-
-
-
-It sounds like your issue is related to embedded programming, possibly on a microcontroller or a bare-metal system where memory sections are manually managed. Here's what could be happening:
-
-1. Loop Termination Depends on a Struct: If a for loop is not exiting, it's likely because the condition check is failing. If this condition is based on a struct that isn't being updated correctly due to memory mapping issues, the loop may never reach its "true" exit case.
-
-
-2. Missing Memory Section in SS_STACK: The .data, .s_data, and .ss_stack sections usually hold initialized variables, small data, and stack space. If these are not correctly mapped in the linker script or memory configuration (e.g., in SS_STACK in the ROM folder), the program may be accessing incorrect values or uninitialized memory.
-
-
-3. Differences Between Main and MCDC: If both main and MCDC (possibly a test coverage module) reference memory sections inconsistently, it could lead to undefined behavior, causing the loop to misbehave. Ensuring that both reference the same memory sections explicitly would prevent discrepancies.
-
-
-4. Possible Causes:
-
-The struct used as a loop limiter is not properly initialized or loaded into memory.
-
-Variables in .data or .s_data are being accessed incorrectly due to incorrect memory mappings.
-
-The stack (.ss_stack) might not be properly set up, causing unintended behavior in function calls.
-
-
-
-
-Solution:
-
-Adding explicit addresses for .data, .ss_stack, and .s_data in the SS_STACK file ensures that the linker correctly places these sections in memory. This prevents uninitialized or corrupted memory from affecting program flow, which might be why the loop wasn't evaluating the condition properly before.
-
-Let me know if you need more details based on your specific setup!
 
