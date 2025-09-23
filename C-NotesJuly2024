@@ -1,4 +1,9 @@
-I wanted to create a macro that extracts table data in an doc file, its for program testing, so by just selecting the list incomplete variable name in the active sheet I want the macro to get the complete variable name, its variable data name and its LSB in the doc file by going to its location in the file explorer then selecting it, the doc file consist of many data but I want the macro to check the tables only and find whats necessary for me, the table usually have the complete variable name with its data name and its lsb in one line, each has its columns, can you make it for me?
+https://youtube.com/playlist?list=PLhSFOX7kG6SRObV42VdW-KoxmqX7n0xxa&si=reqMeA0N1Pz4ezyG
+
+
+
+
+ wanted to create a macro that extracts table data in an doc file, its for program testing, so by just selecting the list incomplete variable name in the active sheet I want the macro to get the complete variable name, its variable data name and its LSB in the doc file by going to its location in the file explorer then selecting it, the doc file consist of many data but I want the macro to check the tables only and find whats necessary for me, the table usually have the complete variable name with its data name and its lsb in one line, each has its columns, can you make it for me?
 
 
 
